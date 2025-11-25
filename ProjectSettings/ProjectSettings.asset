@@ -173,7 +173,7 @@ PlayerSettings:
   AndroidTargetSdkVersion: 0
   activeInputHandler: 2
   AndroidPreferredInstallLocation: 1
-  aotOptions: ""
+  aotOptions:
   stripEngineCode: 1
   iPhoneStrippingLevel: 0
   iPhoneScriptCallOptimization: 0
