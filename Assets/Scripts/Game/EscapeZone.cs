@@ -42,7 +42,11 @@ namespace HorrorGame
         public UnityEngine.Events.UnityEvent OnEscapeSuccess;
 
         private AudioSource audioSource;
-        private bool playerInZone;
+
+        /// <summary>
+        /// 플레이어가 탈출 구역 안에 있는지 여부
+        /// </summary>
+        public bool IsPlayerInZone { get; private set; }
 
         private void Awake()
         {
@@ -98,7 +102,7 @@ namespace HorrorGame
 
             if (player != null)
             {
-                playerInZone = true;
+                IsPlayerInZone = true;
                 Debug.Log("[EscapeZone] 플레이어가 탈출 구역에 진입");
 
                 if (autoEscape)
@@ -118,7 +122,7 @@ namespace HorrorGame
 
             if (player != null)
             {
-                playerInZone = false;
+                IsPlayerInZone = false;
                 Debug.Log("[EscapeZone] 플레이어가 탈출 구역에서 나감");
             }
         }

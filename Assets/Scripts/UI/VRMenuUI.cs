@@ -94,9 +94,19 @@ namespace HorrorGame
         private void Start()
         {
             // 플레이어 카메라 자동 찾기
-            if (playerCamera == null && VRPlayer.Instance != null)
+            if (playerCamera == null)
             {
-                playerCamera = VRPlayer.Instance.vrCamera;
+                // Main Camera 찾기
+                var mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    playerCamera = mainCam.transform;
+                }
+                // 없으면 VRPlayer 위치 사용
+                else if (VRPlayer.Instance != null)
+                {
+                    playerCamera = VRPlayer.Instance.transform;
+                }
             }
 
             // 게임 이벤트 연결
