@@ -5,7 +5,9 @@
       "Bash(dotnet --version:*)",
       "Bash(dotnet tool:*)",
       "Bash(findstr:*)",
-      "Bash(if not exist \"d:\\01.Work\\08.rf\\erd\\.vscode\" mkdir \"d:\\01.Work\\08.rf\\erd\\.vscode\")"
+      "Bash(if not exist \"d:\\01.Work\\08.rf\\erd\\.vscode\" mkdir \"d:\\01.Work\\08.rf\\erd\\.vscode\")",
+      "Bash(rm:*)",
+      "Bash(del \"d:\\01.Work\\08.rf\\erd\\Directory.Build.props\")"
     ],
     "deny": [],
     "ask": []

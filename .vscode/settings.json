@@ -22,7 +22,6 @@
   // OmniSharp 설정
   "omnisharp.enableEditorConfigSupport": true,
   "omnisharp.enableRoslynAnalyzers": true,
-  "omnisharp.organizeImportsOnFormat": true,
 
   // Unity 관련 설정
   "omnisharp.useModernNet": false,
@@ -36,5 +35,6 @@
     "**/Temp/": true,
     "**/Logs/": true,
     "**/obj/": true
-  }
+  },
+  "dotnet.formatting.organizeImportsOnFormat": true
 }
