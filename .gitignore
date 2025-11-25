@@ -77,3 +77,8 @@ crashlytics-build.properties
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Claude Code - Include config, exclude cache
+!.claude/
+!.claude/**
+!CLAUDE.md

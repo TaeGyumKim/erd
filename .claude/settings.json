@@ -1,0 +1,37 @@
+{
+  "$schema": "https://claude.ai/claude-code/settings.schema.json",
+  "name": "VR Horror Escape Game",
+  "description": "Unity 2022.3.21f1 + Meta Quest 3 VR 공포 탈출 게임",
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(dotnet *)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(del /s *)"
+    ]
+  },
+  "context": {
+    "include": [
+      "Assets/Scripts/**/*.cs",
+      "Assets/Editor/**/*.cs",
+      "Packages/manifest.json",
+      "ProjectSettings/*.asset",
+      "README.md"
+    ],
+    "exclude": [
+      "Library/**",
+      "Temp/**",
+      "Logs/**",
+      "obj/**",
+      "*.meta"
+    ]
+  }
+}
