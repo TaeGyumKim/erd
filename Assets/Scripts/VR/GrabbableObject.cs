@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// VR에서 잡을 수 있는 오브젝트

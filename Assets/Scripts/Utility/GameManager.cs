@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// 게임 전체를 관리하는 싱글톤 매니저

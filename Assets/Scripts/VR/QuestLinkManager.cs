@@ -4,7 +4,7 @@ using UnityEngine.XR.Management;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// Quest Link 연결 상태를 관리하는 매니저

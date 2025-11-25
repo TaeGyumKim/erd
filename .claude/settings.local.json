@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet format:*)",
+      "Bash(dotnet --version:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(findstr:*)",
+      "Bash(if not exist \"d:\\01.Work\\08.rf\\erd\\.vscode\" mkdir \"d:\\01.Work\\08.rf\\erd\\.vscode\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

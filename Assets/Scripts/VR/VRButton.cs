@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// VR에서 누를 수 있는 버튼

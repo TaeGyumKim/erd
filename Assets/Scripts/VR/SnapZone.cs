@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// 오브젝트를 특정 위치에 스냅(고정)시키는 영역

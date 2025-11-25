@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// VR 플레이어 리그를 관리하는 메인 클래스

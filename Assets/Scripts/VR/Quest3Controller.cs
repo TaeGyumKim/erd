@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.XR;
 using System.Collections.Generic;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// Meta Quest 3 컨트롤러 전용 기능

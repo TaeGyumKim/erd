@@ -122,7 +122,7 @@ namespace HorrorGame
             // 플레이어 카메라 자동 찾기
             if (playerCamera == null && VRPlayer.Instance != null)
             {
-                playerCamera = VRPlayer.Instance.vrCamera;
+                playerCamera = Camera.main?.transform ?? VRPlayer.Instance.transform;
             }
 
             // 초기 상태 업데이트
@@ -166,7 +166,7 @@ namespace HorrorGame
         {
             if (VRPlayer.Instance == null) return;
 
-            float staminaPercent = VRPlayer.Instance.CurrentStamina / VRPlayer.Instance.maxStamina;
+            float staminaPercent = VRPlayer.Instance.currentStamina / VRPlayer.Instance.maxStamina;
 
             if (staminaBar != null)
             {
@@ -269,26 +269,25 @@ namespace HorrorGame
         {
             if (statusText == null || VRPlayer.Instance == null) return;
 
-            switch (VRPlayer.Instance.currentState)
+            // 상태 우선순위: Caught > Hiding > Sprinting > Normal
+            if (VRPlayer.Instance.currentState == VRPlayer.PlayerState.Caught)
             {
-                case VRPlayer.PlayerState.Hiding:
-                    statusText.text = "숨는 중...";
-                    statusText.color = Color.cyan;
-                    break;
-
-                case VRPlayer.PlayerState.Sprinting:
-                    statusText.text = "달리는 중";
-                    statusText.color = Color.yellow;
-                    break;
-
-                case VRPlayer.PlayerState.Caught:
-                    statusText.text = "잡혔다!";
-                    statusText.color = Color.red;
-                    break;
-
-                default:
-                    statusText.text = "";
-                    break;
+                statusText.text = "잡혔다!";
+                statusText.color = Color.red;
+            }
+            else if (VRPlayer.Instance.currentState == VRPlayer.PlayerState.Hiding)
+            {
+                statusText.text = "숨는 중...";
+                statusText.color = Color.cyan;
+            }
+            else if (VRPlayer.Instance.IsSprinting)
+            {
+                statusText.text = "달리는 중";
+                statusText.color = Color.yellow;
+            }
+            else
+            {
+                statusText.text = "";
             }
         }
 
@@ -365,6 +364,14 @@ namespace HorrorGame
         public void ToggleVisibility()
         {
             SetVisible(!isVisible);
+        }
+
+        /// <summary>
+        /// 상태 메시지 표시 (체크포인트, 목표 등)
+        /// </summary>
+        public void ShowStatus(string message, float duration = 2f)
+        {
+            ShowWarning(message, duration);
         }
     }
 }

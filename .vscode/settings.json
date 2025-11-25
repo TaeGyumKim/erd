@@ -1,0 +1,40 @@
+{
+  // 저장 시 자동 포맷팅
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+
+  // C# 설정
+  "[csharp]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll": "explicit"
+    }
+  },
+
+  // 파일 저장 설정
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  // OmniSharp 설정
+  "omnisharp.enableEditorConfigSupport": true,
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.organizeImportsOnFormat": true,
+
+  // Unity 관련 설정
+  "omnisharp.useModernNet": false,
+  "dotnet.defaultSolution": "erd.sln",
+
+  // 파일 제외 (Unity 자동 생성 파일)
+  "files.exclude": {
+    "**/.git": true,
+    "**/*.meta": false,
+    "**/Library/": true,
+    "**/Temp/": true,
+    "**/Logs/": true,
+    "**/obj/": true
+  }
+}

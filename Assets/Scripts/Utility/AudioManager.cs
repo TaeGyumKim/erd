@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// 오디오 재생을 관리하는 매니저

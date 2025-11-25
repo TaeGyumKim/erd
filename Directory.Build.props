@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <!-- 코드 분석 활성화 -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- 경고를 오류로 처리하지 않음 (Unity 호환성) -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <!-- Nullable 비활성화 (Unity 호환성) -->
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+</Project>

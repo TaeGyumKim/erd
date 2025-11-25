@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.XR;
 using System.Collections.Generic;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// VR 컨트롤러 손 모델 표시 및 애니메이션

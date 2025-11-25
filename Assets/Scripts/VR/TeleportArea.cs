@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// 텔레포트 가능한 영역을 정의하는 스크립트

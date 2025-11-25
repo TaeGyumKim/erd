@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "components": [
+    "Microsoft.VisualStudio.Workload.ManagedGame",
+    "Microsoft.VisualStudio.Component.Unity",
+    "Microsoft.NetCore.Component.Runtime.6.0",
+    "Microsoft.VisualStudio.Component.Roslyn.Compiler",
+    "Microsoft.VisualStudio.Component.Roslyn.LanguageServices"
+  ]
+}

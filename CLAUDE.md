@@ -25,12 +25,15 @@
 ### 파일 구조
 ```
 Assets/Scripts/
-├── Player/      - 플레이어 관련 (VRPlayer, VRFlashlight, PlayerInventory)
+├── Player/      - 플레이어 (VRPlayer, VRFlashlight, PlayerInventory)
 ├── Enemy/       - 적 AI (KillerAI)
-├── Interaction/ - 상호작용 (Door, HidingSpot, PickupItem 등)
-├── Game/        - 게임 시스템 (HorrorGameManager, EscapeZone 등)
-├── UI/          - UI (VRHUD, VRMenuUI)
-├── VR/          - VR 전용 (Quest3Controller, QuestLinkManager 등)
+├── Interaction/ - 상호작용 (Door, HidingSpot, PickupItem, ReadableNote, DoorPeek 등)
+├── Game/        - 게임 시스템 (HorrorGameManager, ObjectiveSystem, CheckpointSystem 등)
+├── UI/          - UI (VRHUD, VRMenuUI, NoteUI)
+├── VR/          - VR 전용 (Quest3Controller, VRComfortSettings 등)
+├── Effects/     - 효과 (HeartbeatEffect, BreathingSystem)
+├── Audio/       - 오디오 (FootstepSystem)
+├── Environment/ - 환경 (LightFlicker)
 └── Utility/     - 유틸리티
 ```
 
@@ -42,6 +45,9 @@ Assets/Scripts/
 - `HorrorAudioManager.Instance`
 - `VRHUD.Instance`
 - `VRMenuUI.Instance`
+- `ObjectiveSystem.Instance`
+- `CheckpointSystem.Instance`
+- `VRComfortSettings.Instance`
 
 ### 주석
 - 한글 주석 사용

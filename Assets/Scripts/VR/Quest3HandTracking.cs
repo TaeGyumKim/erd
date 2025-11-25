@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.XR.Hands;
 using System;
 
-namespace VRGame
+namespace HorrorGame
 {
     /// <summary>
     /// Meta Quest 3 핸드 트래킹 지원

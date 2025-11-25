@@ -29,6 +29,14 @@ namespace HorrorGame
         [Tooltip("필요한 열쇠 ID")]
         public string requiredKeyId = "";
 
+        [Header("Peek Settings")]
+        [Tooltip("엿보기 각도 (DoorPeek에서 설정)")]
+        public float peekAngle = 0f;
+
+        // 프로퍼티
+        public bool IsOpen => isOpen;
+        public bool IsLocked => isLocked;
+
         [Header("Audio")]
         public AudioClip openSound;
         public AudioClip closeSound;
@@ -194,6 +202,20 @@ namespace HorrorGame
         {
             requiredKeyId = keyId;
             isLocked = !string.IsNullOrEmpty(keyId);
+        }
+
+        /// <summary>
+        /// 엿보기 각도 설정 (DoorPeek에서 호출)
+        /// </summary>
+        public void SetPeekAngle(float angle)
+        {
+            if (isOpen) return; // 이미 열려있으면 무시
+
+            peekAngle = Mathf.Clamp(angle, 0, openAngle);
+
+            // 엿보기 회전 적용
+            Quaternion peekRotation = closedRotation * Quaternion.AngleAxis(peekAngle, rotationAxis);
+            transform.localRotation = peekRotation;
         }
     }
 }
