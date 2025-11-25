@@ -171,6 +171,7 @@ PlayerSettings:
   AndroidBundleVersionCode: 1
   AndroidMinSdkVersion: 29
   AndroidTargetSdkVersion: 0
+  activeInputHandler: 2
   AndroidPreferredInstallLocation: 1
   aotOptions:
   stripEngineCode: 1
