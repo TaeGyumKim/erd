@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_URP
 using UnityEngine.Rendering.Universal;
+#endif
 
 namespace HorrorGame
 {
@@ -17,8 +19,8 @@ namespace HorrorGame
         public static VRComfortSettings Instance { get; private set; }
 
         [Header("Movement Vignette")]
-        [Tooltip("이동 시 비네트 효과 (멀미 감소)")]
-        public bool useMovementVignette = true;
+        [Tooltip("이동 시 비네트 효과 (멀미 감소, URP 필요)")]
+        public bool useMovementVignette = false;
 
         [Tooltip("비네트 강도")]
         [Range(0, 1)]
@@ -38,8 +40,8 @@ namespace HorrorGame
         public float snapTurnCooldown = 0.3f;
 
         [Header("Teleport Settings")]
-        [Tooltip("텔레포트 시 페이드 효과")]
-        public bool teleportFade = true;
+        [Tooltip("텔레포트 시 페이드 효과 (URP 필요)")]
+        public bool teleportFade = false;
 
         [Tooltip("페이드 시간")]
         public float fadeTime = 0.2f;
@@ -67,8 +69,10 @@ namespace HorrorGame
         public Transform xrOrigin;
         public Transform cameraTransform;
 
+#if UNITY_URP
         private Volume postProcessVolume;
         private Vignette vignette;
+#endif
         private float currentVignetteIntensity;
         private Vector3 lastPosition;
         private float lastSnapTime;
@@ -89,12 +93,14 @@ namespace HorrorGame
 
         private void Start()
         {
+#if UNITY_URP
             // Post Processing 찾기
             postProcessVolume = FindObjectOfType<Volume>();
             if (postProcessVolume != null)
             {
                 postProcessVolume.profile.TryGet(out vignette);
             }
+#endif
 
             // XR Origin 찾기
             if (xrOrigin == null)
@@ -132,6 +138,7 @@ namespace HorrorGame
 
         private void UpdateMovementVignette()
         {
+#if UNITY_URP
             if (vignette == null) return;
 
             // 이동 속도 계산
@@ -158,6 +165,7 @@ namespace HorrorGame
             {
                 vignette.intensity.value = currentVignetteIntensity;
             }
+#endif
         }
 
         /// <summary>
@@ -216,6 +224,7 @@ namespace HorrorGame
 
         private System.Collections.IEnumerator FadeScreen(bool fadeOut)
         {
+#if UNITY_URP
             if (vignette == null) yield break;
 
             float startIntensity = vignette.intensity.value;
@@ -230,6 +239,9 @@ namespace HorrorGame
             }
 
             vignette.intensity.value = endIntensity;
+#else
+            yield break;
+#endif
         }
 
         /// <summary>

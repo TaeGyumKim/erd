@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_URP
 using UnityEngine.Rendering.Universal;
+#endif
 
 namespace HorrorGame
 {
@@ -41,8 +43,8 @@ namespace HorrorGame
         public float currentBPM;
 
         [Header("Visual Effect")]
-        [Tooltip("화면 가장자리 비네트 효과")]
-        public bool useVignette = true;
+        [Tooltip("화면 가장자리 비네트 효과 (URP 필요)")]
+        public bool useVignette = false;
 
         [Tooltip("최대 비네트 강도")]
         [Range(0, 1)]
@@ -73,8 +75,10 @@ namespace HorrorGame
         private float dangerLevel = 0;
         private float targetDangerLevel = 0;
         private float heartbeatTimer;
+#if UNITY_URP
         private Volume postProcessVolume;
         private Vignette vignette;
+#endif
         private Quest3Controller[] controllers;
         private bool isPulsing;
 
@@ -94,6 +98,7 @@ namespace HorrorGame
 
         private void Start()
         {
+#if UNITY_URP
             // Post Processing 찾기
             if (useVignette)
             {
@@ -103,6 +108,7 @@ namespace HorrorGame
                     postProcessVolume.profile.TryGet(out vignette);
                 }
             }
+#endif
 
             // 컨트롤러 찾기
             if (useHaptics)
@@ -218,6 +224,7 @@ namespace HorrorGame
 
         private System.Collections.IEnumerator VignettePulse()
         {
+#if UNITY_URP
             if (vignette == null) yield break;
             if (isPulsing) yield break;
 
@@ -247,10 +254,14 @@ namespace HorrorGame
             }
 
             isPulsing = false;
+#else
+            yield break;
+#endif
         }
 
         private void UpdateVisuals()
         {
+#if UNITY_URP
             if (!useVignette || vignette == null) return;
 
             // 기본 비네트 강도
@@ -260,6 +271,7 @@ namespace HorrorGame
                 vignette.intensity.value = baseIntensity;
             }
             vignette.color.value = vignetteColor;
+#endif
         }
 
         /// <summary>
