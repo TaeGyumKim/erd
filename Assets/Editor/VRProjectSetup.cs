@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using HorrorGame;
 
-namespace VRGame.Editor
+namespace HorrorGame.Editor
 {
     /// <summary>
     /// VR 프로젝트 초기 설정을 도와주는 에디터 도구
@@ -80,7 +81,7 @@ namespace VRGame.Editor
             var rb = cube.AddComponent<Rigidbody>();
             rb.useGravity = true;
 
-            cube.AddComponent<VRGame.GrabbableObject>();
+            cube.AddComponent<GrabbableObject>();
 
             Selection.activeGameObject = cube;
             Debug.Log("[VR Setup] 잡을 수 있는 큐브가 생성되었습니다.");
@@ -105,7 +106,7 @@ namespace VRGame.Editor
                 collider.isTrigger = true;
             }
 
-            buttonFace.AddComponent<VRGame.VRButton>();
+            buttonFace.AddComponent<VRButton>();
 
             Selection.activeGameObject = buttonBase;
             Debug.Log("[VR Setup] VR 버튼이 생성되었습니다.");
