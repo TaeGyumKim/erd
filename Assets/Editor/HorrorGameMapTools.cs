@@ -141,10 +141,12 @@ namespace HorrorGame.Editor
         {
             foreach (var go in Selection.gameObjects)
             {
+#pragma warning disable CS0618 // NavigationStatic은 deprecated되었지만 Unity 2022.3에서는 여전히 작동함
                 GameObjectUtility.SetStaticEditorFlags(go,
                     isStatic
                         ? GameObjectUtility.GetStaticEditorFlags(go) | StaticEditorFlags.NavigationStatic
                         : GameObjectUtility.GetStaticEditorFlags(go) & ~StaticEditorFlags.NavigationStatic);
+#pragma warning restore CS0618
                 EditorUtility.SetDirty(go);
             }
             Debug.Log($"[맵 도구] {Selection.gameObjects.Length}개 오브젝트의 Navigation Static을 {(isStatic ? "설정" : "해제")}했습니다.");

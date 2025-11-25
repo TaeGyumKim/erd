@@ -76,6 +76,12 @@ Assets/Scripts/
 - OpenXR 1.9.1
 - Oculus XR Plugin 4.1.2
 - XR Hands 1.3.0
+- Input System 1.7.0
+
+### Input System 설정
+- **Active Input Handling**: Both (New Input System + Legacy)
+- ProjectSettings > Player > Other Settings > Active Input Handling = Both
+- VR 컨트롤러와 XR Interaction을 위해 필요
 
 ## 슬래시 명령어
 
@@ -85,19 +91,98 @@ Assets/Scripts/
 - `/review` - 코드 리뷰
 - `/status` - 프로젝트 상태 확인
 
+## 프로젝트 설정
+
+### Unity Editor 설정
+
+1. **Input System**
+   - Edit > Project Settings > Player > Other Settings
+   - Active Input Handling: **Both**
+   - 이 설정이 `-1`이면 에러 발생
+
+2. **XR 설정**
+   - Edit > Project Settings > XR Plug-in Management
+   - PC: OpenXR 활성화
+   - Android: Oculus 활성화
+
+3. **필수 파일**
+   - `ProjectSettings/XRPackageSettings.asset`: JSON 형식으로 유지
+   - `Assets/XR/`: XR 로더 및 OpenXR 설정
+   - `Assets/XRI/`: XR Interaction 설정
+   - 이 파일들은 Git에 커밋해야 VR 설정이 보존됨
+
+### 개발 도구
+
+- **맵 제작 도구**: `Horror Game > 맵 제작 도구` 메뉴
+  - NavMesh 설정 및 베이크
+  - 살인마 AI 생성 및 순찰 지점 설정
+  - 상호작용 오브젝트 빠른 생성
+  - 게임 설정 검증
+
+## Git 설정
+
+### 커밋 대상
+- ✅ Assets/Scripts/ (모든 스크립트)
+- ✅ Assets/Editor/ (에디터 도구)
+- ✅ Assets/XR/ (VR 로더 설정)
+- ✅ Assets/XRI/ (XR Interaction 설정)
+- ✅ ProjectSettings/ (프로젝트 설정)
+- ✅ Packages/manifest.json (패키지 의존성)
+
+### 제외 대상
+- ❌ Library/ (Unity 캐시)
+- ❌ Temp/, Obj/, Builds/ (임시 파일)
+- ❌ .vs/, .idea/ (IDE 설정)
+- ❌ .claude/settings.local.json (로컬 설정)
+
 ## 자주 하는 작업
 
 ### 새 인터랙션 추가
+
 1. `InteractableObject` 상속
 2. `OnSelectEntered` 오버라이드
 3. Inspector 필드 추가
 
 ### 새 아이템 추가
+
 1. `PickupItem` 상속
 2. `itemData` 설정
 3. `Collect()` 커스터마이즈
 
 ### 새 적 추가
+
 1. `KillerAI` 참조
 2. `NavMeshAgent` 필요
 3. 상태 머신 구현
+
+## 알려진 이슈 및 해결방법
+
+### Input System 에러
+
+**증상**: `ArgumentException: Invalid value of 'activeInputHandler' setting: -1`
+
+**해결**:
+
+```text
+ProjectSettings/ProjectSettings.asset 파일에서
+activeInputHandler: 2 로 설정
+```
+
+### XRPackageSettings JSON 에러
+
+**증상**: `JSON parse error: Invalid value`
+
+**해결**:
+
+```json
+ProjectSettings/XRPackageSettings.asset를 JSON 형식으로:
+{
+    "m_Settings": []
+}
+```
+
+### NavigationStatic 경고
+
+**증상**: `CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete`
+
+**해결**: `#pragma warning disable CS0618`로 경고 억제 (Unity 2022.3에서는 정상 작동)

@@ -78,7 +78,13 @@ crashlytics-build.properties
 ehthumbs.db
 Thumbs.db
 
-# Claude Code - Include config, exclude cache
+# Claude Code - Include config, exclude local settings
 !.claude/
 !.claude/**
 !CLAUDE.md
+.claude/settings.local.json
+
+# Unity XR/XRI auto-generated settings (should be committed for VR setup)
+# These files are needed for proper VR configuration
+# !Assets/XR/
+# !Assets/XRI/
