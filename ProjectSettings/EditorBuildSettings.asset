@@ -4,6 +4,9 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/SampleHorrorScene.unity
+    guid: dd1cc24fe089dd6448ecc2b8b1a0fbc0
   m_configObjects:
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: bb6a055ddf59d07469ec62d2cc74a24f, type: 2}

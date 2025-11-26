@@ -83,6 +83,46 @@ Assets/Scripts/
 - ProjectSettings > Player > Other Settings > Active Input Handling = Both
 - VR 컨트롤러와 XR Interaction을 위해 필요
 
+## Model Context Protocol (MCP) 서버
+
+Unity MCP 서버를 통해 AI가 Unity 에디터와 직접 상호작용할 수 있습니다.
+
+### 설정
+
+`.claude/settings.json`에 Unity MCP 서버가 설정되어 있습니다:
+
+```json
+{
+  "mcpServers": {
+    "mcp-unity": {
+      "command": "node",
+      "args": [
+        "E:/code/erd/Library/PackageCache/com.gamelovers.mcp-unity@0d46436568/Server~/build/index.js"
+      ]
+    }
+  }
+}
+```
+
+### 기능
+
+- 🎮 **Unity 에디터 제어**: 씬, 게임오브젝트, 컴포넌트 관리
+- 📁 **에셋 관리**: 프로젝트 파일 검색 및 조작
+- 🔍 **코드 분석**: Unity의 컴파일러를 활용한 코드 분석
+- 🎬 **씬 관리**: Hierarchy 검색 및 씬 조작
+- 🐛 **디버깅**: 런타임 디버깅 지원
+
+### 사용 방법
+
+1. Unity 에디터 열기
+2. Claude Code에서 MCP 서버가 자동으로 연결됨
+3. AI가 Unity 명령을 실행할 수 있음
+
+### 참고 자료
+
+- [Unity MCP Server (CoplayDev)](https://github.com/CoplayDev/unity-mcp)
+- [Model Context Protocol 공식 문서](https://modelcontextprotocol.io/)
+
 ## 슬래시 명령어
 
 - `/create-script` - 새 스크립트 생성
