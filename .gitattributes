@@ -21,3 +21,6 @@
 *.JPG filter=lfs diff=lfs merge=lfs -text
 *.OGG filter=lfs diff=lfs merge=lfs -text
 *.anim filter=lfs diff=lfs merge=lfs -text
+/Assets/Character/Textures/TG_Outfit_01_Painter_LOW_COSTUME_ALL_02_BaseMap.tif filter=lfs diff=lfs merge=lfs -text
+/Assets/Character/Textures/TG_Outfit_01_Painter_LOW_COSTUME_ALL_02_MaskMap.tif filter=lfs diff=lfs merge=lfs -text
+/Assets/Character/Textures/TG_Outfit_01_Painter_LOW_COSTUME_ALL_02_Normal.tif filter=lfs diff=lfs merge=lfs -text
