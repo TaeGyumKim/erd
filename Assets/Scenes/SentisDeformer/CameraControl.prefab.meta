@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c8cdcee754c53d24c81065b289fca566
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Scenes/SentisDeformer/CameraControl.prefab
+  uploadId: 715636
