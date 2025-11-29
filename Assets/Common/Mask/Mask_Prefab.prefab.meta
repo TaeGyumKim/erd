@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 37be10c81c90502439606022d7f007f1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Common/Mask/Mask_Prefab.prefab
+  uploadId: 715636
