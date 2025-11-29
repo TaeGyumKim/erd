@@ -54,7 +54,7 @@ namespace HorrorGame.Editor
             }
 
             // TeleportationProvider 설정
-            var teleportProviders = Object.FindObjectsOfType<TeleportationProvider>();
+            var teleportProviders = Object.FindObjectsOfType<UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationProvider>();
             foreach (var provider in teleportProviders)
             {
                 provider.system = locomotionSystem;

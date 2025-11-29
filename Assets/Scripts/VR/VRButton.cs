@@ -13,7 +13,7 @@ namespace HorrorGame
     /// 2. Collider를 Trigger로 설정
     /// 3. OnButtonPressed 이벤트에 원하는 동작 연결
     /// </summary>
-    public class VRButton : XRSimpleInteractable
+    public class VRButton : UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable
     {
         [Header("Button Settings")]
         [Tooltip("버튼이 눌리는 거리")]

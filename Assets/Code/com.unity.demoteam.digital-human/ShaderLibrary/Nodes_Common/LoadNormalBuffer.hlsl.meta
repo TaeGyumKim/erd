@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: f0389c7620fbf4b4fb6d56ebabb9b743
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/ShaderLibrary/Nodes_Common/LoadNormalBuffer.hlsl
+  uploadId: 715636

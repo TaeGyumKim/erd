@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 98f8f9e88000ce44dab3a2208069079d
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Scripts/Runtime/CameraControl.cs
+  uploadId: 715636

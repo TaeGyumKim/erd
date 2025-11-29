@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: f323029d24845d44086e554bab3c9807
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/ShaderLibrary/Nodes_Skin/SnappersBlend.hlsl
+  uploadId: 715636

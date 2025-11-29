@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 873ed9d5d0a09884b8ac8bc593590f99
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/SkinAttachmentMesh.cs
+  uploadId: 715636

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 106b22cf98968a648842c80c89f72788
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Third Party Notices.md
+  uploadId: 715636

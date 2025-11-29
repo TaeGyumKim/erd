@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7865e2cedbae1834fb277e523fd1e75a
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.altaria/Runtime/Unity.DemoTeam.Altaria.Runtime.asmdef
+  uploadId: 715636

@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
+
 
 namespace HorrorGame
 {
@@ -11,7 +11,7 @@ namespace HorrorGame
     /// 1. 바닥/플랫폼 오브젝트에 이 스크립트 추가
     /// 2. Collider 컴포넌트 필요 (없으면 자동 추가)
     /// </summary>
-    [RequireComponent(typeof(TeleportationArea))]
+    [RequireComponent(typeof(UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationArea))]
     public class TeleportArea : MonoBehaviour
     {
         [Header("Teleport Settings")]
@@ -25,13 +25,13 @@ namespace HorrorGame
         [Tooltip("텔레포트 불가 영역 색상")]
         public Color invalidColor = new Color(1f, 0f, 0f, 0.3f);
 
-        private TeleportationArea teleportationArea;
+        private UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationArea teleportationArea;
         private Renderer areaRenderer;
         private Material areaMaterial;
 
         private void Awake()
         {
-            teleportationArea = GetComponent<TeleportationArea>();
+            teleportationArea = GetComponent<UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationArea>();
             areaRenderer = GetComponent<Renderer>();
 
             // Collider 확인

@@ -8,7 +8,7 @@ namespace HorrorGame
     /// 상호작용 가능한 오브젝트의 기본 클래스
     /// 문, 서랍, 스위치 등에 사용
     /// </summary>
-    public class InteractableObject : XRSimpleInteractable
+    public class InteractableObject : UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable
     {
         [Header("Interaction Settings")]
         [Tooltip("상호작용 가능 여부")]

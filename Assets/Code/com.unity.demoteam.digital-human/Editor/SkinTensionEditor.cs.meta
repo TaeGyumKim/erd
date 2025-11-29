@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: afbb2405c426d8444b34bd02605b6b3e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Editor/SkinTensionEditor.cs
+  uploadId: 715636

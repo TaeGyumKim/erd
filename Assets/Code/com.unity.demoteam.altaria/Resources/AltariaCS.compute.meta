@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 8320f21dcf914cdfb5b5d604d7898bd1
+timeCreated: 1718182843
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.altaria/Resources/AltariaCS.compute
+  uploadId: 715636

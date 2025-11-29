@@ -12,7 +12,7 @@ namespace HorrorGame
     /// 2. Collider 컴포넌트 필요 (없으면 자동 추가)
     /// 3. Rigidbody 컴포넌트 필요 (없으면 자동 추가)
     /// </summary>
-    [RequireComponent(typeof(XRGrabInteractable))]
+    [RequireComponent(typeof(UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable))]
     public class GrabbableObject : MonoBehaviour
     {
         [Header("Grab Settings")]
@@ -30,7 +30,7 @@ namespace HorrorGame
         [Tooltip("놓을 때 재생할 사운드")]
         public AudioClip releaseSound;
 
-        private XRGrabInteractable grabInteractable;
+        private UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
         private AudioSource audioSource;
 
         private void Awake()
@@ -41,7 +41,7 @@ namespace HorrorGame
         private void SetupComponents()
         {
             // XRGrabInteractable 설정
-            grabInteractable = GetComponent<XRGrabInteractable>();
+            grabInteractable = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
             if (grabInteractable != null)
             {
                 grabInteractable.throwOnDetach = true;

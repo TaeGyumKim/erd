@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 722902b97c2a26d41a9d43cf012cb1c6
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/ShaderLibrary/Nodes_Teeth/SphericalPolygon.hlsl
+  uploadId: 715636

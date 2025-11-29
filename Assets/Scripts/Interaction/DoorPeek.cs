@@ -11,7 +11,7 @@ namespace HorrorGame
     /// 1. Door 오브젝트에 추가
     /// 2. 문 손잡이 위치에 peekHandle 설정
     /// </summary>
-    public class DoorPeek : XRSimpleInteractable
+    public class DoorPeek : UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable
     {
         [Header("References")]
         [Tooltip("연결된 문")]

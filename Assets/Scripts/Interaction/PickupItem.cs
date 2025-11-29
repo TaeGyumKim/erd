@@ -12,7 +12,7 @@ namespace HorrorGame
     /// 2. Collider (Trigger) 필요
     /// 3. itemData 설정
     /// </summary>
-    public class PickupItem : XRGrabInteractable
+    public class PickupItem : UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable
     {
         [Header("Item Data")]
         [Tooltip("아이템 정보")]

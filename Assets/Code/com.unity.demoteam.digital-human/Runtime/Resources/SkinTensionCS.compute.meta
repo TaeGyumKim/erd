@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 47352f48d3ad17f40bfac5ce1f71343d
+ComputeShaderImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/Resources/SkinTensionCS.compute
+  uploadId: 715636

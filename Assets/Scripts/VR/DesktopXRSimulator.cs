@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
+
 
 namespace HorrorGame
 {
@@ -17,8 +17,8 @@ namespace HorrorGame
         [Header("참조")]
         [SerializeField] private Transform xrOrigin;
         [SerializeField] private Transform cameraTransform;
-        [SerializeField] private XRRayInteractor leftHandInteractor;
-        [SerializeField] private XRRayInteractor rightHandInteractor;
+        [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor leftHandInteractor;
+        [SerializeField] private UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor rightHandInteractor;
 
         private float rotationX = 0f;
         private float rotationY = 0f;
@@ -54,7 +54,7 @@ namespace HorrorGame
             // Interactor 자동 찾기
             if (rightHandInteractor == null)
             {
-                var interactors = FindObjectsOfType<XRRayInteractor>();
+                var interactors = FindObjectsOfType<UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor>();
                 foreach (var interactor in interactors)
                 {
                     if (interactor.name.Contains("Right"))
@@ -188,14 +188,14 @@ namespace HorrorGame
             if (Physics.Raycast(ray, out RaycastHit hit, 3f))
             {
                 // XRGrabInteractable 확인
-                var grabInteractable = hit.collider.GetComponent<XRGrabInteractable>();
+                var grabInteractable = hit.collider.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
                 if (grabInteractable != null)
                 {
                     Debug.Log($"[DesktopXRSimulator] 상호작용 가능: {hit.collider.name}");
                 }
 
                 // XRSimpleInteractable 확인
-                var simpleInteractable = hit.collider.GetComponent<XRSimpleInteractable>();
+                var simpleInteractable = hit.collider.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
                 if (simpleInteractable != null)
                 {
                     Debug.Log($"[DesktopXRSimulator] 상호작용 가능: {hit.collider.name}");

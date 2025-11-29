@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7bbc8605b2d98a34c933acd4df4f6cbe
+ComputeShaderImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/Resources/SkinAttachmentCS.compute
+  uploadId: 715636

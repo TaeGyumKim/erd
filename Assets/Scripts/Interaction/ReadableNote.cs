@@ -13,7 +13,7 @@ namespace HorrorGame
     /// 2. noteTitle과 noteContent 설정
     /// 3. 필요시 noteImage 추가
     /// </summary>
-    public class ReadableNote : XRSimpleInteractable
+    public class ReadableNote : UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable
     {
         [Header("Note Content")]
         [Tooltip("메모 제목")]

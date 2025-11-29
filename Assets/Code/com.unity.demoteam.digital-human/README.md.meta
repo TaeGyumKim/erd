@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5ad31e78e43e7d047bc8cc281d1c9d9f
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/README.md
+  uploadId: 715636

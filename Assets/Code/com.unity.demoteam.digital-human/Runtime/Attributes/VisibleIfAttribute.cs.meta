@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 32b4c40d4e2ec8b4daa2ed4162fac0b2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/Attributes/VisibleIfAttribute.cs
+  uploadId: 715636

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1948b5a18f3837e418f322ec20037176
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/LegacySkinAttachmentTarget.cs
+  uploadId: 715636

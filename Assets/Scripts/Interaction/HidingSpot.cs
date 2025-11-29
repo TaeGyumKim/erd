@@ -11,7 +11,7 @@ namespace HorrorGame
     /// 2. hidePosition에 플레이어가 숨을 위치 설정
     /// 3. Collider (Trigger) 필요
     /// </summary>
-    public class HidingSpot : XRSimpleInteractable
+    public class HidingSpot : UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable
     {
         [Header("Hiding Settings")]
         [Tooltip("숨는 위치")]

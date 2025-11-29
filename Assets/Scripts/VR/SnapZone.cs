@@ -12,7 +12,7 @@ namespace HorrorGame
     /// 2. acceptedTags에 스냅 가능한 오브젝트의 태그 설정
     /// 3. OnObjectSnapped 이벤트로 스냅 시 동작 정의
     /// </summary>
-    [RequireComponent(typeof(XRSocketInteractor))]
+    [RequireComponent(typeof(UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor))]
     public class SnapZone : MonoBehaviour
     {
         [Header("Snap Settings")]
@@ -30,12 +30,12 @@ namespace HorrorGame
         public UnityEngine.Events.UnityEvent<GameObject> OnObjectSnapped;
         public UnityEngine.Events.UnityEvent<GameObject> OnObjectRemoved;
 
-        private XRSocketInteractor socketInteractor;
+        private UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor socketInteractor;
         private GameObject snappedObject;
 
         private void Awake()
         {
-            socketInteractor = GetComponent<XRSocketInteractor>();
+            socketInteractor = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRSocketInteractor>();
 
             // 이벤트 연결
             socketInteractor.selectEntered.AddListener(OnSnap);
@@ -82,7 +82,7 @@ namespace HorrorGame
                 // 오브젝트 고정
                 if (lockOnSnap)
                 {
-                    var grabInteractable = obj.GetComponent<XRGrabInteractable>();
+                    var grabInteractable = obj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>();
                     if (grabInteractable != null)
                     {
                         grabInteractable.enabled = false;

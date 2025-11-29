@@ -67,7 +67,7 @@ namespace HorrorGame
         private void CheckConnection()
         {
             var xrDisplaySubsystems = new List<XRDisplaySubsystem>();
-            SubsystemManager.GetInstances(xrDisplaySubsystems);
+            SubsystemManager.GetSubsystems(xrDisplaySubsystems);
 
             bool currentlyConnected = false;
 

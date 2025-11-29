@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 6fa9a6e462c895a4f9374ab9359a7f7d
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/ShaderLibrary/Nodes_Common/F_Schlick.hlsl
+  uploadId: 715636

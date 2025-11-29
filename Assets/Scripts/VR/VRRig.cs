@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
+
 
 namespace HorrorGame
 {
@@ -11,10 +11,10 @@ namespace HorrorGame
     {
         [Header("Controllers")]
         [Tooltip("왼손 컨트롤러")]
-        public XRDirectInteractor leftHandController;
+        public UnityEngine.XR.Interaction.Toolkit.Interactors.XRDirectInteractor leftHandController;
 
         [Tooltip("오른손 컨트롤러")]
-        public XRDirectInteractor rightHandController;
+        public UnityEngine.XR.Interaction.Toolkit.Interactors.XRDirectInteractor rightHandController;
 
         [Header("Locomotion")]
         [Tooltip("텔레포트 이동 사용 여부")]
@@ -31,7 +31,7 @@ namespace HorrorGame
             // 컨트롤러 자동 찾기
             if (leftHandController == null || rightHandController == null)
             {
-                var interactors = GetComponentsInChildren<XRDirectInteractor>();
+                var interactors = GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Interactors.XRDirectInteractor>();
                 foreach (var interactor in interactors)
                 {
                     if (interactor.name.ToLower().Contains("left"))

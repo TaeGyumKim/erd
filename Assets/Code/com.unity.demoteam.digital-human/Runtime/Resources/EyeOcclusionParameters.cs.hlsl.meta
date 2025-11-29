@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: da5d683523deca446b117cbf12337b6c
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/Resources/EyeOcclusionParameters.cs.hlsl
+  uploadId: 715636

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4ad7a7ec8829b7b4abf5d105d49e5a71
+ComputeShaderImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/Resources/SkinDeformationCS.compute
+  uploadId: 715636

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: af8a6fecc463a364ab9b9720d8fe72e3
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/ShaderLibrary/Nodes_Teeth/TeethAttenuation.hlsl
+  uploadId: 715636

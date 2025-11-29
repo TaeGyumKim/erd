@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6f48011e1a936084a82e7ec7b0a0a2a1
+ComputeShaderImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Code/com.unity.demoteam.digital-human/Runtime/Resources/EyeRendererCS.compute
+  uploadId: 715636
