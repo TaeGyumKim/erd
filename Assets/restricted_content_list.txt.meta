@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d23a3bc42c10f0c4b990de0c40247f6a
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/restricted_content_list.txt
+  uploadId: 715636

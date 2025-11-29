@@ -1,0 +1,20 @@
+Restricted content list
+
+
+
+
+/Face_Textures_restricted_content
+
+	/Face_BaseMap - restricted_content
+	/Face_MaskMap - restricted_content
+	/Face_Normal_Detail - restricted_content
+	/Face_Normal - restricted_content
+	/Face_ReflectionMap -restricted_content
+	/Face_RoughnessMap -restricted_content
+	/Face_SSS - restricted_content
+	/Face_Thickness - restricted_content
+
+
+/TG_Hero_Interactive
+
+	/Face_Skinned - restricted content
