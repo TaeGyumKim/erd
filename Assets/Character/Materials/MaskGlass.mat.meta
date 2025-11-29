@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 773ed3b132c0a1e4a8d116d2bc790985
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Character/Materials/MaskGlass.mat
+  uploadId: 715636

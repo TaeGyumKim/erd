@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0ce546bf7f2e60244b4661ece35a5042
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Character/Materials/Placeholder_Mat.mat
+  uploadId: 715636
