@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: c84e43bf41f34624bba9366f186eec12
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Character/SentisModels/20241112-105552_interactive_1_C32_B0.5_6.1e-05.sentis
+  uploadId: 715636
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: d416c695138885743b59877b4a1c2f5a, type: 3}

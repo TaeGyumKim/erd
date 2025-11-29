@@ -1,0 +1,52 @@
+fileFormatVersion: 2
+guid: 3364e91356d6b9e4786320b6bd17d073
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303238
+  packageName: 'Time Ghost: Character - URP'
+  packageVersion: 1.0
+  assetPath: Assets/Character/SentisModels/20241112-105552_interactive_1_C32_B0.5_6.1e-05.onnx
+  uploadId: 715636
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: f22407ba6b4157b4a93d0a670bd3dd57, type: 3}
+  dynamicDimConfigs:
+  - name: unk__470
+    size: -1
+  - name: unk__471
+    size: -1
+  - name: unk__472
+    size: -1
+  - name: unk__473
+    size: -1
+  - name: unk__474
+    size: -1
+  - name: unk__475
+    size: -1
+  - name: unk__476
+    size: -1
+  - name: unk__477
+    size: -1
+  - name: unk__478
+    size: -1
+  - name: unk__479
+    size: -1
+  - name: unk__480
+    size: -1
+  - name: unk__481
+    size: -1
+  - name: unk__482
+    size: -1
+  - name: unk__483
+    size: -1
+  - name: unk__484
+    size: -1
+  - name: unk__485
+    size: -1
+  - name: unk__486
+    size: -1
