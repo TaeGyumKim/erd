@@ -10,7 +10,21 @@
       "Bash(del \"d:\\01.Work\\08.rf\\erd\\Directory.Build.props\")",
       "Bash(dir:*)",
       "Bash(if exist \"e:\\code\\erd\\Library\\LastSceneManagerSetup.txt\" type \"e:\\code\\erd\\Library\\LastSceneManagerSetup.txt\")",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(if not exist \"e:\\code\\erd\\Assets\\Scenes\" mkdir \"e:\\code\\erd\\Assets\\Scenes\")",
+      "Bash(if not exist \"e:\\code\\erd\\Assets\\Prefabs\" mkdir \"e:\\code\\erd\\Assets\\Prefabs\")",
+      "Bash(if not exist \"e:\\code\\erd\\Assets\\Prefabs\\ClueItems\" mkdir \"e:\\code\\erd\\Assets\\Prefabs\\ClueItems\")",
+      "Bash(if not exist \"e:\\code\\erd\\Assets\\Prefabs\\Interactables\" mkdir \"e:\\code\\erd\\Assets\\Prefabs\\Interactables\")",
+      "Bash(if not exist \"e:\\code\\erd\\Assets\\Prefabs\\Characters\" mkdir \"e:\\code\\erd\\Assets\\Prefabs\\Characters\")",
+      "Bash(find:*)",
+      "mcp__mcp-unity__update_gameobject",
+      "mcp__mcp-unity__update_component",
+      "mcp__mcp-unity__recompile_scripts",
+      "mcp__mcp-unity__execute_menu_item",
+      "mcp__mcp-unity__get_console_logs",
+      "mcp__mcp-unity__add_asset_to_scene",
+      "mcp__mcp-unity__select_gameobject",
+      "mcp__mcp-unity__send_console_log"
     ],
     "deny": [],
     "ask": []

@@ -38,7 +38,7 @@
     "mcp-unity": {
       "command": "node",
       "args": [
-        "E:/code/erd/Library/PackageCache/com.gamelovers.mcp-unity@0d46436568/Server~/build/index.js"
+        "E:/code/erd/Library/PackageCache/com.gamelovers.mcp-unity@0d4643656803/Server~/build/index.js"
       ]
     }
   }
