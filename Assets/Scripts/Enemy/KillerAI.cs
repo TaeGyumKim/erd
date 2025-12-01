@@ -209,7 +209,10 @@ namespace HorrorGame
                 case AIState.Search:
                     agent.speed = searchSpeed;
                     stateTimer = searchTime;
-                    agent.SetDestination(lastNoisePosition);
+                    if (agent.isOnNavMesh)
+                    {
+                        agent.SetDestination(lastNoisePosition);
+                    }
                     break;
 
                 case AIState.Chase:
@@ -227,7 +230,10 @@ namespace HorrorGame
                 case AIState.Investigate:
                     agent.speed = searchSpeed;
                     stateTimer = searchTime;
-                    agent.SetDestination(lastKnownPosition);
+                    if (agent.isOnNavMesh)
+                    {
+                        agent.SetDestination(lastKnownPosition);
+                    }
                     OnPlayerLost?.Invoke();
                     break;
             }
@@ -247,6 +253,9 @@ namespace HorrorGame
         {
             if (patrolPoints == null || patrolPoints.Length == 0) return;
 
+            // NavMesh 위에 있는지 확인
+            if (!agent.isOnNavMesh) return;
+
             // 목적지 도착 체크
             if (!agent.pathPending && agent.remainingDistance < 0.5f)
             {
@@ -265,6 +274,7 @@ namespace HorrorGame
         private void GoToNextPatrolPoint()
         {
             if (patrolPoints.Length == 0) return;
+            if (!agent.isOnNavMesh) return;
 
             agent.SetDestination(patrolPoints[currentPatrolIndex].position);
             currentPatrolIndex = (currentPatrolIndex + 1) % patrolPoints.Length;
@@ -273,6 +283,18 @@ namespace HorrorGame
         private void UpdateSearch()
         {
             stateTimer -= Time.deltaTime;
+
+            // NavMesh 위에 있는지 확인
+            if (!agent.isOnNavMesh)
+            {
+                // 수색 시간 초과 시 순찰로 복귀
+                if (stateTimer <= 0)
+                {
+                    hasNoiseToInvestigate = false;
+                    SetState(AIState.Patrol);
+                }
+                return;
+            }
 
             // 목적지 도착
             if (!agent.pathPending && agent.remainingDistance < 1f)
@@ -291,6 +313,8 @@ namespace HorrorGame
 
         private void SearchAround()
         {
+            if (!agent.isOnNavMesh) return;
+
             // 랜덤한 주변 위치로 이동
             Vector3 randomDirection = Random.insideUnitSphere * searchRadius;
             randomDirection += transform.position;
@@ -305,6 +329,7 @@ namespace HorrorGame
         private void UpdateChase()
         {
             if (player == null) return;
+            if (!agent.isOnNavMesh) return;
 
             // 플레이어가 숨어있으면 추적 중단
             var vrPlayer = player.GetComponent<VRPlayer>();
@@ -320,6 +345,17 @@ namespace HorrorGame
         private void UpdateInvestigate()
         {
             stateTimer -= Time.deltaTime;
+
+            // NavMesh 위에 있는지 확인
+            if (!agent.isOnNavMesh)
+            {
+                // 조사 시간 초과 시 순찰로 복귀
+                if (stateTimer <= 0)
+                {
+                    SetState(AIState.Patrol);
+                }
+                return;
+            }
 
             // 마지막 위치 도착
             if (!agent.pathPending && agent.remainingDistance < 1f)

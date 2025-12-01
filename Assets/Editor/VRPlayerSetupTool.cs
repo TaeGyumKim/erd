@@ -302,7 +302,7 @@ namespace HorrorGame.Editor
             var xrController = controller.AddComponent<ActionBasedController>();
 
             // XR Direct Interactor
-            var interactor = controller.AddComponent<XRDirectInteractor>();
+            var interactor = controller.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRDirectInteractor>();
 
             // Sphere Collider for interaction
             var collider = controller.AddComponent<SphereCollider>();
