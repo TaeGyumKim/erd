@@ -42,10 +42,24 @@ namespace HorrorGame
         public float searchAnimSpeed = 1.0f;
 
         [Tooltip("추적 시 애니메이션 속도 배율")]
-        public float chaseAnimSpeed = 1.2f;
+        public float chaseAnimSpeed = 1.8f;
 
         [Tooltip("조사 시 애니메이션 속도 배율")]
         public float investigateAnimSpeed = 0.9f;
+
+        [Header("Running Animation")]
+        [Tooltip("뛰기 시 보폭 증가 (Root Motion용)")]
+        public float runningStrideMultiplier = 1.3f;
+
+        [Tooltip("뛰기 판정 속도 임계값")]
+        public float runningThreshold = 3.5f;
+
+        [Header("Root Motion")]
+        [Tooltip("Root Motion 사용 여부 - Walk 애니메이션에 Root Motion이 없으면 비활성화")]
+        public bool useRootMotion = false;
+
+        [Tooltip("Root Motion 속도 배율")]
+        public float rootMotionSpeedMultiplier = 1.0f;
 
         // 애니메이션 파라미터 해시 (성능 최적화)
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
@@ -55,6 +69,7 @@ namespace HorrorGame
         private static readonly int IsSearchingHash = Animator.StringToHash("IsSearching");
         private static readonly int AttackTriggerHash = Animator.StringToHash("Attack");
         private static readonly int AlertTriggerHash = Animator.StringToHash("Alert");
+        private static readonly int CatchTriggerHash = Animator.StringToHash("Catch");
         private static readonly int NormalizedSpeedHash = Animator.StringToHash("NormalizedSpeed");
 
         private float currentSpeed;
@@ -64,6 +79,8 @@ namespace HorrorGame
         private Vector3 lastPosition;
         private KillerAI.AIState lastState;
         private bool wasMoving;
+        private Vector3 rootMotionDelta;
+        private bool isRootMotionEnabled;
 
         private void Awake()
         {
@@ -104,6 +121,39 @@ namespace HorrorGame
                 killerAI.OnPlayerSpotted.AddListener(OnPlayerSpotted);
                 killerAI.OnPlayerCaught.AddListener(OnPlayerCaught);
             }
+
+            // Root Motion 설정
+            SetupRootMotion();
+        }
+
+        /// <summary>
+        /// Root Motion 초기 설정
+        /// </summary>
+        private void SetupRootMotion()
+        {
+            if (animator != null)
+            {
+                animator.applyRootMotion = useRootMotion;
+                isRootMotionEnabled = useRootMotion;
+            }
+
+            if (agent != null)
+            {
+                if (useRootMotion)
+                {
+                    // Root Motion 사용 시: NavMeshAgent가 위치를 제어하지 않음
+                    agent.updatePosition = false;
+                    agent.updateRotation = true;
+                    Debug.Log("[KillerAnimator] Root Motion 활성화됨 - NavMeshAgent 위치 제어 비활성화");
+                }
+                else
+                {
+                    // Root Motion 미사용 시: NavMeshAgent가 직접 이동 제어
+                    agent.updatePosition = true;
+                    agent.updateRotation = true;
+                    Debug.Log("[KillerAnimator] Root Motion 비활성화됨 - NavMeshAgent가 이동 제어");
+                }
+            }
         }
 
         private void OnDestroy()
@@ -120,6 +170,67 @@ namespace HorrorGame
         {
             UpdateAnimation();
             UpdateStateBasedSettings();
+            SyncAgentPosition();
+        }
+
+        /// <summary>
+        /// Root Motion 콜백 - 애니메이션에서 이동 데이터를 받아옴
+        /// </summary>
+        private void OnAnimatorMove()
+        {
+            if (!isRootMotionEnabled || animator == null) return;
+
+            // 애니메이션의 Root Motion 델타 저장 (Y축 무시 - 공중에 뜨는 것 방지)
+            rootMotionDelta = animator.deltaPosition * rootMotionSpeedMultiplier;
+            rootMotionDelta.y = 0f; // Y축 이동 제거
+
+            // NavMeshAgent의 목표 속도에 맞게 Root Motion 스케일링
+            if (agent != null && agent.enabled && agent.hasPath)
+            {
+                // NavMeshAgent가 원하는 속도와 Root Motion 속도의 비율
+                float desiredSpeed = agent.desiredVelocity.magnitude;
+                float animationSpeed = rootMotionDelta.magnitude / Time.deltaTime;
+
+                if (animationSpeed > 0.01f)
+                {
+                    // 애니메이션 속도를 NavMeshAgent 목표 속도에 맞춤
+                    float speedRatio = desiredSpeed / animationSpeed;
+                    rootMotionDelta *= speedRatio;
+                }
+
+                // Root Motion 방향을 NavMeshAgent 목표 방향으로 조정
+                if (agent.desiredVelocity.sqrMagnitude > 0.01f)
+                {
+                    Vector3 direction = agent.desiredVelocity.normalized;
+                    direction.y = 0f; // 수평 방향만
+                    float magnitude = rootMotionDelta.magnitude;
+                    rootMotionDelta = direction * magnitude;
+                }
+            }
+
+            // 위치 적용 (XZ만)
+            transform.position += rootMotionDelta;
+        }
+
+        /// <summary>
+        /// NavMeshAgent 위치를 실제 Transform 위치와 동기화
+        /// </summary>
+        private void SyncAgentPosition()
+        {
+            if (!isRootMotionEnabled || agent == null || !agent.enabled) return;
+
+            // NavMesh 위에 위치 고정 (공중에 뜨는 것 방지)
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(transform.position, out hit, 2f, NavMesh.AllAreas))
+            {
+                // Y 위치만 NavMesh에 맞춤
+                Vector3 correctedPos = transform.position;
+                correctedPos.y = hit.position.y;
+                transform.position = correctedPos;
+            }
+
+            // NavMeshAgent의 내부 위치를 실제 Transform 위치로 동기화
+            agent.nextPosition = transform.position;
         }
 
         /// <summary>
@@ -148,17 +259,35 @@ namespace HorrorGame
             // Speed 파라미터 설정
             SetFloatSafe(SpeedHash, currentSpeed);
 
-            // 정규화된 속도 (0~1) - Blend Tree용
-            float maxSpeed = killerAI != null ? killerAI.chaseSpeed : 4.5f;
-            float normalizedSpeed = Mathf.Clamp01(currentSpeed / maxSpeed);
+            // 정규화된 속도 계산 - 걷기 속도(patrolSpeed) 기준으로 정규화
+            // patrolSpeed에서 NormalizedSpeed = 0.4 (BlendTree의 Walk 위치)
+            // chaseSpeed에서 NormalizedSpeed = 1.0 (BlendTree의 Run 위치)
+            float patrolSpeed = killerAI != null ? killerAI.patrolSpeed : 2f;
+            float chaseSpeed = killerAI != null ? killerAI.chaseSpeed : 4.5f;
+
+            float normalizedSpeed;
+            if (currentSpeed <= patrolSpeed)
+            {
+                // 0 ~ patrolSpeed → 0 ~ 0.4
+                normalizedSpeed = (currentSpeed / patrolSpeed) * 0.4f;
+            }
+            else
+            {
+                // patrolSpeed ~ chaseSpeed → 0.4 ~ 1.0
+                float t = (currentSpeed - patrolSpeed) / (chaseSpeed - patrolSpeed);
+                normalizedSpeed = 0.4f + t * 0.6f;
+            }
+            normalizedSpeed = Mathf.Clamp01(normalizedSpeed);
+
             SetFloatSafe(NormalizedSpeedHash, normalizedSpeed);
 
             // 이동 상태 파라미터 설정
             bool isMoving = currentSpeed > 0.1f;
             bool isRunning = currentSpeed > runSpeedThreshold;
+            bool isChasing = killerAI != null && killerAI.currentState == KillerAI.AIState.Chase;
 
             SetBoolSafe(IsWalkingHash, isMoving && !isRunning);
-            SetBoolSafe(IsRunningHash, isRunning);
+            SetBoolSafe(IsRunningHash, isRunning || isChasing);
 
             // 이동 시작/정지 감지
             if (isMoving != wasMoving)
@@ -305,6 +434,15 @@ namespace HorrorGame
         }
 
         /// <summary>
+        /// 잡기 애니메이션 트리거
+        /// </summary>
+        public void TriggerCatch()
+        {
+            TriggerAnimationSafe(CatchTriggerHash);
+            Debug.Log("[KillerAnimator] 잡기 애니메이션 트리거");
+        }
+
+        /// <summary>
         /// 특정 애니메이션 트리거
         /// </summary>
         public void TriggerAnimation(string triggerName)
@@ -320,6 +458,27 @@ namespace HorrorGame
         {
             if (animator == null) return;
             animator.speed = speed;
+        }
+
+        /// <summary>
+        /// Root Motion 활성화/비활성화
+        /// </summary>
+        public void SetRootMotion(bool enabled)
+        {
+            useRootMotion = enabled;
+            isRootMotionEnabled = enabled;
+
+            if (animator != null)
+            {
+                animator.applyRootMotion = enabled;
+            }
+
+            if (agent != null)
+            {
+                agent.updatePosition = !enabled;
+            }
+
+            Debug.Log($"[KillerAnimator] Root Motion {(enabled ? "활성화" : "비활성화")}");
         }
 
         /// <summary>

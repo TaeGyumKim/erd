@@ -99,6 +99,9 @@ namespace HorrorGame
         private Vector3 lastNoisePosition;
         private float lastNoiseTime;
         private bool hasNoiseToInvestigate;
+        private bool isWaitingAtPatrolPoint;
+        private bool isSearchingAround;
+        private float searchAroundCooldown;
 
         private void Awake()
         {
@@ -113,15 +116,74 @@ namespace HorrorGame
 
         private void Start()
         {
-            // 플레이어 찾기
-            var playerObj = FindObjectOfType<VRPlayer>();
-            if (playerObj != null)
+            FindPlayer();
+
+            // NavMesh 위로 위치 보정
+            SnapToNavMesh();
+
+            // NavMeshAgent 설정 최적화
+            agent.speed = patrolSpeed;
+            agent.angularSpeed = 120f;
+            agent.acceleration = 8f;
+            agent.stoppingDistance = 0.5f;
+            agent.autoBraking = true;
+            agent.updatePosition = true; // NavMeshAgent가 직접 위치 이동 제어
+            agent.updateRotation = true; // 이동 방향으로 회전
+
+            SetState(AIState.Patrol);
+        }
+
+        /// <summary>
+        /// NavMesh 위로 위치 스냅 (공중에 뜨는 것 방지)
+        /// </summary>
+        private void SnapToNavMesh()
+        {
+            NavMeshHit hit;
+            // 현재 위치에서 가장 가까운 NavMesh 지점 찾기
+            if (NavMesh.SamplePosition(transform.position, out hit, 10f, NavMesh.AllAreas))
             {
-                player = playerObj.transform;
+                // NavMeshAgent를 일시적으로 비활성화하고 위치 이동
+                agent.enabled = false;
+                transform.position = hit.position;
+                agent.enabled = true;
+                Debug.Log($"[KillerAI] NavMesh 위치로 스냅: {hit.position}");
+            }
+            else
+            {
+                Debug.LogWarning("[KillerAI] 근처에 NavMesh가 없습니다! NavMesh를 베이크하세요.");
+            }
+        }
+
+        /// <summary>
+        /// 플레이어 찾기 (VR 또는 PC)
+        /// </summary>
+        private void FindPlayer()
+        {
+            // VR 플레이어 먼저 찾기
+            var vrPlayer = FindObjectOfType<VRPlayer>();
+            if (vrPlayer != null)
+            {
+                player = vrPlayer.transform;
+                Debug.Log("[KillerAI] VR 플레이어 발견");
+                return;
             }
 
-            agent.speed = patrolSpeed;
-            SetState(AIState.Patrol);
+            // PC 플레이어 찾기
+            var pcPlayer = FindObjectOfType<PCPlayerController>();
+            if (pcPlayer != null)
+            {
+                player = pcPlayer.transform;
+                Debug.Log("[KillerAI] PC 플레이어 발견");
+                return;
+            }
+
+            // 태그로 찾기
+            var taggedPlayer = GameObject.FindGameObjectWithTag("Player");
+            if (taggedPlayer != null)
+            {
+                player = taggedPlayer.transform;
+                Debug.Log("[KillerAI] 태그로 플레이어 발견");
+            }
         }
 
         private void Update()
@@ -241,6 +303,12 @@ namespace HorrorGame
 
         private void OnExitState(AIState state)
         {
+            // 공통 초기화
+            StopAllCoroutines();
+            isWaitingAtPatrolPoint = false;
+            isSearchingAround = false;
+            agent.isStopped = false;
+
             switch (state)
             {
                 case AIState.Chase:
@@ -256,6 +324,9 @@ namespace HorrorGame
             // NavMesh 위에 있는지 확인
             if (!agent.isOnNavMesh) return;
 
+            // 이미 대기 중이면 스킵
+            if (isWaitingAtPatrolPoint) return;
+
             // 목적지 도착 체크
             if (!agent.pathPending && agent.remainingDistance < 0.5f)
             {
@@ -265,10 +336,21 @@ namespace HorrorGame
 
         private IEnumerator WaitAndGoNext()
         {
+            isWaitingAtPatrolPoint = true;
             agent.isStopped = true;
+
             yield return new WaitForSeconds(patrolWaitTime);
+
+            // 상태가 변경되었으면 중단
+            if (currentState != AIState.Patrol)
+            {
+                isWaitingAtPatrolPoint = false;
+                yield break;
+            }
+
             agent.isStopped = false;
             GoToNextPatrolPoint();
+            isWaitingAtPatrolPoint = false;
         }
 
         private void GoToNextPatrolPoint()
@@ -283,6 +365,7 @@ namespace HorrorGame
         private void UpdateSearch()
         {
             stateTimer -= Time.deltaTime;
+            searchAroundCooldown -= Time.deltaTime;
 
             // NavMesh 위에 있는지 확인
             if (!agent.isOnNavMesh)
@@ -296,10 +379,9 @@ namespace HorrorGame
                 return;
             }
 
-            // 목적지 도착
-            if (!agent.pathPending && agent.remainingDistance < 1f)
+            // 목적지 도착 시 주변 수색 (쿨다운 적용)
+            if (!agent.pathPending && agent.remainingDistance < 1f && searchAroundCooldown <= 0)
             {
-                // 주변 수색
                 SearchAround();
             }
 
@@ -314,9 +396,14 @@ namespace HorrorGame
         private void SearchAround()
         {
             if (!agent.isOnNavMesh) return;
+            if (isSearchingAround) return;
+
+            isSearchingAround = true;
+            searchAroundCooldown = 2f; // 2초 쿨다운
 
             // 랜덤한 주변 위치로 이동
             Vector3 randomDirection = Random.insideUnitSphere * searchRadius;
+            randomDirection.y = 0; // 수평 방향만
             randomDirection += transform.position;
 
             NavMeshHit hit;
@@ -324,6 +411,8 @@ namespace HorrorGame
             {
                 agent.SetDestination(hit.position);
             }
+
+            isSearchingAround = false;
         }
 
         private void UpdateChase()
@@ -332,8 +421,7 @@ namespace HorrorGame
             if (!agent.isOnNavMesh) return;
 
             // 플레이어가 숨어있으면 추적 중단
-            var vrPlayer = player.GetComponent<VRPlayer>();
-            if (vrPlayer != null && vrPlayer.IsHiding)
+            if (IsPlayerHiding())
             {
                 // 숨어있는 플레이어는 보이지 않음
                 return;
@@ -345,6 +433,7 @@ namespace HorrorGame
         private void UpdateInvestigate()
         {
             stateTimer -= Time.deltaTime;
+            searchAroundCooldown -= Time.deltaTime;
 
             // NavMesh 위에 있는지 확인
             if (!agent.isOnNavMesh)
@@ -357,8 +446,8 @@ namespace HorrorGame
                 return;
             }
 
-            // 마지막 위치 도착
-            if (!agent.pathPending && agent.remainingDistance < 1f)
+            // 마지막 위치 도착 시 주변 수색 (쿨다운 적용)
+            if (!agent.pathPending && agent.remainingDistance < 1f && searchAroundCooldown <= 0)
             {
                 SearchAround();
             }
@@ -371,6 +460,28 @@ namespace HorrorGame
         }
 
         /// <summary>
+        /// 플레이어가 숨어있는지 체크
+        /// </summary>
+        private bool IsPlayerHiding()
+        {
+            // VR 플레이어 숨기 체크
+            var vrPlayer = player.GetComponent<VRPlayer>();
+            if (vrPlayer != null && vrPlayer.IsHiding)
+            {
+                return true;
+            }
+
+            // PC 플레이어 숨기 체크
+            var pcPlayer = player.GetComponent<PCPlayerController>();
+            if (pcPlayer != null && pcPlayer.IsHiding)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 플레이어를 볼 수 있는지 체크
         /// </summary>
         public bool CanSeePlayer()
@@ -378,13 +489,14 @@ namespace HorrorGame
             if (player == null) return false;
 
             // 숨어있는 플레이어는 보이지 않음
-            var vrPlayer = player.GetComponent<VRPlayer>();
-            if (vrPlayer != null && vrPlayer.IsHiding)
+            if (IsPlayerHiding())
             {
                 return false;
             }
 
-            Vector3 directionToPlayer = player.position - transform.position;
+            Vector3 eyePosition = transform.position + Vector3.up * 1.6f; // 눈 높이
+            Vector3 playerCenter = player.position + Vector3.up * 0.9f; // 플레이어 중심
+            Vector3 directionToPlayer = playerCenter - eyePosition;
             float distanceToPlayer = directionToPlayer.magnitude;
 
             // 거리 체크
@@ -401,17 +513,27 @@ namespace HorrorGame
             }
 
             // 장애물 체크 (레이캐스트)
-            RaycastHit hit;
-            if (Physics.Raycast(transform.position + Vector3.up, directionToPlayer.normalized,
-                out hit, distanceToPlayer, obstacleMask | playerMask))
+            // 레이어 마스크가 설정되지 않았으면 기본값 사용
+            LayerMask raycastMask = obstacleMask | playerMask;
+            if (raycastMask == 0)
             {
+                raycastMask = ~0; // 모든 레이어 체크
+            }
+
+            RaycastHit hit;
+            if (Physics.Raycast(eyePosition, directionToPlayer.normalized, out hit, distanceToPlayer, raycastMask))
+            {
+                // 플레이어 또는 플레이어의 자식 오브젝트에 히트
                 if (hit.transform == player || hit.transform.IsChildOf(player))
                 {
                     return true;
                 }
+                // 장애물에 막힘
+                return false;
             }
 
-            return false;
+            // 레이캐스트가 아무것도 맞추지 못함 = 장애물 없음 = 플레이어 보임
+            return true;
         }
 
         /// <summary>
@@ -466,11 +588,24 @@ namespace HorrorGame
                 audioSource.PlayOneShot(catchSound);
             }
 
-            // 플레이어에게 알림
+            // VR 플레이어에게 알림
             var vrPlayer = player.GetComponent<VRPlayer>();
             if (vrPlayer != null)
             {
                 vrPlayer.GetCaught();
+            }
+
+            // PC 플레이어에게 알림
+            var pcPlayer = player.GetComponent<PCPlayerController>();
+            if (pcPlayer != null)
+            {
+                pcPlayer.GetCaught();
+            }
+
+            // 게임 매니저에 게임오버 알림
+            if (HorrorGameManager.Instance != null)
+            {
+                HorrorGameManager.Instance.GameOver("살인마에게 잡혔습니다!");
             }
 
             OnPlayerCaught?.Invoke();
