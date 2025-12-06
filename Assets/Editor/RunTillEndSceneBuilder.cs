@@ -668,18 +668,47 @@ namespace HorrorGame.Editor
             killer.name = "Killer";
 
             // KillerAI 컴포넌트 추가
-            if (killer.GetComponent<KillerAI>() == null)
+            KillerAI killerAI = killer.GetComponent<KillerAI>();
+            if (killerAI == null)
             {
-                killer.AddComponent<KillerAI>();
+                killerAI = killer.AddComponent<KillerAI>();
             }
 
             // NavMeshAgent 추가
-            if (killer.GetComponent<UnityEngine.AI.NavMeshAgent>() == null)
+            UnityEngine.AI.NavMeshAgent agent = killer.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent == null)
             {
-                var agent = killer.AddComponent<UnityEngine.AI.NavMeshAgent>();
+                agent = killer.AddComponent<UnityEngine.AI.NavMeshAgent>();
                 agent.speed = 3.5f;
                 agent.angularSpeed = 120f;
                 agent.stoppingDistance = 1.5f;
+            }
+
+            // KillerAnimator 추가
+            KillerAnimator killerAnimator = killer.GetComponent<KillerAnimator>();
+            if (killerAnimator == null)
+            {
+                killerAnimator = killer.AddComponent<KillerAnimator>();
+                killerAnimator.killerAI = killerAI;
+                killerAnimator.agent = agent;
+            }
+
+            // KillerFootstep 추가 (발소리)
+            KillerFootstep killerFootstep = killer.GetComponent<KillerFootstep>();
+            if (killerFootstep == null)
+            {
+                killerFootstep = killer.AddComponent<KillerFootstep>();
+                killerFootstep.killerAI = killerAI;
+                killerFootstep.agent = agent;
+            }
+
+            // KillerCatchSequence 추가 (잡기 연출)
+            KillerCatchSequence catchSequence = killer.GetComponent<KillerCatchSequence>();
+            if (catchSequence == null)
+            {
+                catchSequence = killer.AddComponent<KillerCatchSequence>();
+                catchSequence.killerAI = killerAI;
+                catchSequence.killerAnimator = killerAnimator;
             }
 
             // 마스크 프리팹 추가

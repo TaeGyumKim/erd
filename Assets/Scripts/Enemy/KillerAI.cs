@@ -611,6 +611,99 @@ namespace HorrorGame
             OnPlayerCaught?.Invoke();
         }
 
+        /// <summary>
+        /// 특정 방 주변 순찰 (RoomProgressManager에서 호출)
+        /// </summary>
+        public void PatrolRoom(Transform roomCenter)
+        {
+            if (roomCenter == null) return;
+
+            StartCoroutine(PatrolRoomCoroutine(roomCenter));
+        }
+
+        private IEnumerator PatrolRoomCoroutine(Transform roomCenter)
+        {
+            // 방 순찰 모드로 전환
+            SetState(AIState.Search);
+
+            // 방 중심으로 이동
+            if (agent.isOnNavMesh)
+            {
+                agent.SetDestination(roomCenter.position);
+            }
+
+            // 방 도착 대기
+            while (agent.pathPending || agent.remainingDistance > 2f)
+            {
+                yield return null;
+            }
+
+            // 방 주변 순찰 (3~4번 랜덤 위치로 이동)
+            int patrolCount = Random.Range(3, 5);
+            for (int i = 0; i < patrolCount; i++)
+            {
+                // 랜덤 위치 생성
+                Vector3 randomOffset = Random.insideUnitSphere * searchRadius;
+                randomOffset.y = 0;
+                Vector3 targetPos = roomCenter.position + randomOffset;
+
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(targetPos, out hit, searchRadius, NavMesh.AllAreas))
+                {
+                    if (agent.isOnNavMesh)
+                    {
+                        agent.SetDestination(hit.position);
+                    }
+
+                    // 이동 완료 대기
+                    while (agent.pathPending || agent.remainingDistance > 0.5f)
+                    {
+                        yield return null;
+                    }
+
+                    // 잠시 대기 (주변 살피기)
+                    yield return new WaitForSeconds(Random.Range(1f, 2f));
+                }
+            }
+
+            // 순찰 완료 후 다시 일반 순찰로
+            SetState(AIState.Patrol);
+            Debug.Log("[KillerAI] 방 순찰 완료, 일반 순찰로 복귀");
+        }
+
+        /// <summary>
+        /// 특정 위치로 이동 (스크립트 이벤트용)
+        /// </summary>
+        public void MoveToPosition(Vector3 position)
+        {
+            if (agent.isOnNavMesh)
+            {
+                agent.SetDestination(position);
+            }
+        }
+
+        /// <summary>
+        /// 살인마 일시 정지
+        /// </summary>
+        public void Pause()
+        {
+            if (agent != null)
+            {
+                agent.isStopped = true;
+            }
+        }
+
+        /// <summary>
+        /// 살인마 재개
+        /// </summary>
+        public void Resume()
+        {
+            if (agent != null)
+            {
+                agent.isStopped = false;
+            }
+        }
+
         // 에디터에서 시야 범위 시각화
         private void OnDrawGizmosSelected()
         {
