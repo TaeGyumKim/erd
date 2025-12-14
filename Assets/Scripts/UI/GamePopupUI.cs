@@ -56,6 +56,9 @@ namespace HorrorGame
         [Tooltip("비밀번호 확인 버튼")]
         public Button passwordSubmitButton;
 
+        [Tooltip("비밀번호 패널 닫기 버튼")]
+        public Button passwordCloseButton;
+
         [Header("Animation")]
         [Tooltip("팝업 애니메이터")]
         public Animator popupAnimator;
@@ -111,8 +114,71 @@ namespace HorrorGame
                 canvasGroup = popupPanel.AddComponent<CanvasGroup>();
             }
 
+            AutoFindKeypadElements();
             SetupButtons();
             HideAllPanels();
+        }
+
+        /// <summary>
+        /// 키패드 UI 요소 자동 검색
+        /// </summary>
+        private void AutoFindKeypadElements()
+        {
+            if (passwordPanel == null) return;
+
+            Transform keypadBg = passwordPanel.transform.Find("KeypadBackground");
+            if (keypadBg == null) return;
+
+            // 닫기 버튼
+            if (passwordCloseButton == null)
+            {
+                var closeBtn = keypadBg.Find("CloseButton");
+                if (closeBtn != null) passwordCloseButton = closeBtn.GetComponent<Button>();
+            }
+
+            // 비밀번호 디스플레이
+            if (passwordDisplayText == null)
+            {
+                var display = keypadBg.Find("PasswordDisplay/DisplayText");
+                if (display != null) passwordDisplayText = display.GetComponent<TMPro.TextMeshProUGUI>();
+            }
+
+            // 숫자 그리드
+            Transform grid = keypadBg.Find("NumberGrid");
+            if (grid != null)
+            {
+                // 숫자 버튼 배열 초기화
+                if (numberButtons == null || numberButtons.Length < 10)
+                {
+                    numberButtons = new Button[10];
+                }
+
+                // 숫자 버튼 찾기
+                for (int i = 0; i < 10; i++)
+                {
+                    if (numberButtons[i] == null)
+                    {
+                        var btn = grid.Find($"Button_{i}");
+                        if (btn != null) numberButtons[i] = btn.GetComponent<Button>();
+                    }
+                }
+
+                // 백스페이스 버튼
+                if (backspaceButton == null)
+                {
+                    var backspace = grid.Find("BackspaceButton");
+                    if (backspace != null) backspaceButton = backspace.GetComponent<Button>();
+                }
+
+                // Enter 버튼
+                if (passwordSubmitButton == null)
+                {
+                    var enter = grid.Find("EnterButton");
+                    if (enter != null) passwordSubmitButton = enter.GetComponent<Button>();
+                }
+            }
+
+            Debug.Log("[GamePopupUI] 키패드 UI 요소 자동 검색 완료");
         }
 
         private void SetupButtons()
@@ -155,6 +221,11 @@ namespace HorrorGame
             if (passwordSubmitButton != null)
             {
                 passwordSubmitButton.onClick.AddListener(SubmitPassword);
+            }
+
+            if (passwordCloseButton != null)
+            {
+                passwordCloseButton.onClick.AddListener(ClosePasswordInput);
             }
         }
 
@@ -291,9 +362,17 @@ namespace HorrorGame
 
         /// <summary>
         /// 비밀번호 입력 팝업 표시
+        /// VRPasswordKeypad가 있으면 이 메서드는 아무것도 하지 않음
         /// </summary>
         public void ShowPasswordInput(string title, int passwordLength, Action<string> onSubmit)
         {
+            // VRPasswordKeypad가 있으면 VR 키패드 사용 (이 UI 사용 안함)
+            if (VRPasswordKeypad.Instance != null)
+            {
+                Debug.Log("[GamePopupUI] VRPasswordKeypad가 있으므로 GamePopupUI 비밀번호 입력 건너뜀");
+                return;
+            }
+
             if (popupPanel == null) return;
 
             currentPasswordLength = passwordLength;
@@ -392,6 +471,22 @@ namespace HorrorGame
             // 팝업 닫기
             ClosePopup();
             currentPasswordCallback = null;
+        }
+
+        /// <summary>
+        /// 비밀번호 입력 취소 (X 버튼)
+        /// </summary>
+        public void ClosePasswordInput()
+        {
+            PlayButtonSound();
+
+            // 콜백 없이 팝업 닫기
+            currentPasswordCallback = null;
+            currentPasswordInput = "";
+
+            // 팝업 닫기
+            ClosePopup();
+            Debug.Log("[GamePopupUI] 비밀번호 입력 취소됨");
         }
 
         /// <summary>
