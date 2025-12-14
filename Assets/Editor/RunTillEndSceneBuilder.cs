@@ -625,10 +625,7 @@ namespace HorrorGame.Editor
                 CreateKiller();
             }
 
-            if (GUILayout.Button("유령 (GhostAI)", GUILayout.Height(30)))
-            {
-                CreateGhost();
-            }
+            // 유령 시스템 폐기됨
 
             EditorGUILayout.EndHorizontal();
 
@@ -668,18 +665,47 @@ namespace HorrorGame.Editor
             killer.name = "Killer";
 
             // KillerAI 컴포넌트 추가
-            if (killer.GetComponent<KillerAI>() == null)
+            KillerAI killerAI = killer.GetComponent<KillerAI>();
+            if (killerAI == null)
             {
-                killer.AddComponent<KillerAI>();
+                killerAI = killer.AddComponent<KillerAI>();
             }
 
             // NavMeshAgent 추가
-            if (killer.GetComponent<UnityEngine.AI.NavMeshAgent>() == null)
+            UnityEngine.AI.NavMeshAgent agent = killer.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent == null)
             {
-                var agent = killer.AddComponent<UnityEngine.AI.NavMeshAgent>();
+                agent = killer.AddComponent<UnityEngine.AI.NavMeshAgent>();
                 agent.speed = 3.5f;
                 agent.angularSpeed = 120f;
                 agent.stoppingDistance = 1.5f;
+            }
+
+            // KillerAnimator 추가
+            KillerAnimator killerAnimator = killer.GetComponent<KillerAnimator>();
+            if (killerAnimator == null)
+            {
+                killerAnimator = killer.AddComponent<KillerAnimator>();
+                killerAnimator.killerAI = killerAI;
+                killerAnimator.agent = agent;
+            }
+
+            // KillerFootstep 추가 (발소리)
+            KillerFootstep killerFootstep = killer.GetComponent<KillerFootstep>();
+            if (killerFootstep == null)
+            {
+                killerFootstep = killer.AddComponent<KillerFootstep>();
+                killerFootstep.killerAI = killerAI;
+                killerFootstep.agent = agent;
+            }
+
+            // KillerCatchSequence 추가 (잡기 연출)
+            KillerCatchSequence catchSequence = killer.GetComponent<KillerCatchSequence>();
+            if (catchSequence == null)
+            {
+                catchSequence = killer.AddComponent<KillerCatchSequence>();
+                catchSequence.killerAI = killerAI;
+                catchSequence.killerAnimator = killerAnimator;
             }
 
             // 마스크 프리팹 추가
@@ -705,44 +731,7 @@ namespace HorrorGame.Editor
             Undo.RegisterCreatedObjectUndo(killer, "Create Killer");
         }
 
-        private void CreateGhost()
-        {
-            GameObject ghost = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            ghost.name = "Ghost";
-            ghost.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
-
-            // 반투명 머티리얼
-            var renderer = ghost.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                Material mat = new Material(Shader.Find("Standard"));
-                mat.SetFloat("_Mode", 3); // Transparent
-                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                mat.SetInt("_ZWrite", 0);
-                mat.DisableKeyword("_ALPHATEST_ON");
-                mat.EnableKeyword("_ALPHABLEND_ON");
-                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                mat.renderQueue = 3000;
-                mat.color = new Color(0.5f, 0.5f, 1f, 0.3f);
-                renderer.material = mat;
-            }
-
-            ghost.AddComponent<GhostAI>();
-            ghost.AddComponent<UnityEngine.AI.NavMeshAgent>();
-
-            // 콜라이더 제거 (유령은 통과)
-            DestroyImmediate(ghost.GetComponent<Collider>());
-
-            SceneView sceneView = SceneView.lastActiveSceneView;
-            if (sceneView != null)
-            {
-                ghost.transform.position = sceneView.pivot;
-            }
-
-            Selection.activeGameObject = ghost;
-            Undo.RegisterCreatedObjectUndo(ghost, "Create Ghost");
-        }
+        // 유령 시스템 폐기됨 - CreateGhost 메서드 제거됨
 
         private void CreatePatrolPoint()
         {
@@ -841,7 +830,7 @@ namespace HorrorGame.Editor
 
             // 5. 캐릭터
             CreateKiller();
-            CreateGhost();
+            // 유령 시스템 폐기됨
 
             // 6. 숨기 장소
             CreateHidingSpot();

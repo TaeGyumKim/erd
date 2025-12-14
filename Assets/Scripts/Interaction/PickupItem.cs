@@ -35,6 +35,10 @@ namespace HorrorGame
         [Tooltip("발광 색상")]
         public Color glowColor = new Color(1f, 1f, 0.5f, 1f);
 
+        [Header("Physics")]
+        [Tooltip("물리 시뮬레이션 사용 (false면 제자리 고정)")]
+        public bool usePhysics = false;
+
         [Header("Events")]
         public UnityEngine.Events.UnityEvent OnPickedUp;
 
@@ -42,10 +46,29 @@ namespace HorrorGame
         private Renderer itemRenderer;
         private Material originalMaterial;
         private bool isCollected;
+        private Rigidbody rb;
 
         protected override void Awake()
         {
             base.Awake();
+
+            // Rigidbody 설정 - 바닥 뚫림 방지
+            rb = GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                if (usePhysics)
+                {
+                    // 물리 사용 시 Continuous 충돌 감지로 바닥 뚫림 방지
+                    rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                    rb.interpolation = RigidbodyInterpolation.Interpolate;
+                }
+                else
+                {
+                    // 물리 미사용 시 Kinematic으로 고정
+                    rb.isKinematic = true;
+                    rb.useGravity = false;
+                }
+            }
 
             audioSource = GetComponent<AudioSource>();
             if (audioSource == null && pickupSound != null)

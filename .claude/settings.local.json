@@ -24,7 +24,16 @@
       "mcp__mcp-unity__get_console_logs",
       "mcp__mcp-unity__add_asset_to_scene",
       "mcp__mcp-unity__select_gameobject",
-      "mcp__mcp-unity__send_console_log"
+      "mcp__mcp-unity__send_console_log",
+      "Bash(timeout 5 powershell:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: PC 테스트 플레이어 및 살인마 시스템 개선\n\nPC 테스트 플레이어:\n- PCPlayerController: VR 없이 키보드/마우스로 테스트 가능\n- 양손 레이 시스템 (왼손: 빨강, 오른손: 초록)\n- 레이 조정 모드 (1키: 왼손, 2키: 오른손, R: 리셋)\n- Tab키로 활성 손 전환\n\n살인마 시스템:\n- KillerCatchSequence: 플레이어 잡기 연출\n- KillerFootstep: 발소리 시스템 (걷기/뛰기)\n- KillerAnimator: 애니메이션 상태 관리\n- 에디터 도구: 설정, 발소리, 애니메이션 설정\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(du:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: 살인마 발소리 에셋 추가\n\n- Footstep(Concrete & Wood) 에셋 추가 (44MB, Git LFS)\n- .gitignore에 Assets/Samples/ 추가 (Package Manager에서 재설치 가능)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(del \"e:\\code\\erd\\Assets\\Editor\\TestMapGenerator.cs\")"
     ],
     "deny": [],
     "ask": []

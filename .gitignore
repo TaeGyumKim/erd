@@ -92,3 +92,11 @@ Thumbs.db
 # These files are needed for proper VR configuration
 # !Assets/XR/
 # !Assets/XRI/
+
+# XR Interaction Toolkit Samples (can be re-imported from Package Manager)
+# Import from: Package Manager > XR Interaction Toolkit > Samples
+Assets/Samples/
+Assets/Samples.meta
+
+# Temporary/test files
+nul

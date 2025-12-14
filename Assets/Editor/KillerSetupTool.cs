@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.AI;
+using Unity.AI.Navigation;
 using System.IO;
 
 namespace HorrorGame.Editor
@@ -46,7 +47,7 @@ namespace HorrorGame.Editor
             GUILayout.Label("살인마 자동 설정 도구", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "TG_Hero_Interactive_Prefab을 살인마로 자동 설정합니다.\n" +
-                "NavMeshAgent, KillerAI, KillerAnimator 컴포넌트가 추가됩니다.",
+                "NavMeshAgent, KillerAI, KillerAnimator, KillerFootstep, KillerCatchSequence 컴포넌트가 추가됩니다.",
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
@@ -173,12 +174,15 @@ namespace HorrorGame.Editor
                 CreatePatrolPoints(killer);
             }
 
+            // NavMesh 자동 베이크
+            EnsureNavMeshExists();
+
             // 선택
             Selection.activeGameObject = killer;
             Undo.RegisterCreatedObjectUndo(killer, "Create Killer");
 
             Debug.Log("[KillerSetupTool] 살인마가 성공적으로 생성되었습니다!");
-            EditorUtility.DisplayDialog("완료", "살인마가 씬에 생성되었습니다!", "확인");
+            EditorUtility.DisplayDialog("완료", "살인마가 씬에 생성되었습니다!\nNavMesh도 자동으로 베이크되었습니다.", "확인");
         }
 
         /// <summary>
@@ -201,8 +205,11 @@ namespace HorrorGame.Editor
                 CreatePatrolPoints(selected);
             }
 
+            // NavMesh 자동 베이크
+            EnsureNavMeshExists();
+
             Debug.Log($"[KillerSetupTool] '{selected.name}'이(가) 살인마로 설정되었습니다!");
-            EditorUtility.DisplayDialog("완료", $"'{selected.name}'이(가) 살인마로 설정되었습니다!", "확인");
+            EditorUtility.DisplayDialog("완료", $"'{selected.name}'이(가) 살인마로 설정되었습니다!\nNavMesh도 자동으로 베이크되었습니다.", "확인");
         }
 
         /// <summary>
@@ -272,6 +279,9 @@ namespace HorrorGame.Editor
             killerAI.searchTime = 10f;
             killerAI.searchRadius = 5f;
 
+            // HorrorGameManager 자동 생성 확인
+            EnsureGameManagerExists();
+
             // KillerAnimator 설정
             KillerAnimator killerAnimator = target.GetComponent<KillerAnimator>();
             if (killerAnimator == null)
@@ -313,7 +323,84 @@ namespace HorrorGame.Editor
             killerAnimator.killerAI = killerAI;
             killerAnimator.agent = agent;
 
+            // KillerFootstep 설정 (발소리 시스템)
+            KillerFootstep killerFootstep = target.GetComponent<KillerFootstep>();
+            if (killerFootstep == null)
+            {
+                killerFootstep = target.AddComponent<KillerFootstep>();
+            }
+            killerFootstep.killerAI = killerAI;
+            killerFootstep.agent = agent;
+            killerFootstep.walkStepInterval = 0.5f;
+            killerFootstep.runStepInterval = 0.28f;
+            killerFootstep.walkVolume = 0.4f;
+            killerFootstep.runVolume = 0.7f;
+            killerFootstep.runSpeedThreshold = 3f;
+
+            // 발소리 에셋 자동 로드
+            LoadFootstepClips(killerFootstep);
+
+            // KillerCatchSequence 설정 (잡기 연출)
+            KillerCatchSequence catchSequence = target.GetComponent<KillerCatchSequence>();
+            if (catchSequence == null)
+            {
+                catchSequence = target.AddComponent<KillerCatchSequence>();
+            }
+            catchSequence.killerAI = killerAI;
+            catchSequence.killerAnimator = killerAnimator;
+            catchSequence.enableShake = true;
+            catchSequence.shakeIntensity = 0.15f;
+            catchSequence.shakeDuration = 2f;
+            catchSequence.shakeCount = 4;
+
             EditorUtility.SetDirty(target);
+        }
+
+        /// <summary>
+        /// 발소리 에셋 자동 로드 (One Shots 사용 - Loop 대신 개별 발소리)
+        /// </summary>
+        private void LoadFootstepClips(KillerFootstep footstep)
+        {
+            const string FOOTSTEP_PATH = "Assets/Footstep(Concrete & Wood)";
+
+            // One Shots 폴더에서 발소리 로드 (Loop 대신 개별 발소리 사용)
+            string oneShotsPath = $"{FOOTSTEP_PATH}/Footstep  One Shots/concrete";
+            var oneShotClips = LoadAudioClipsFromFolder(oneShotsPath);
+
+            if (oneShotClips != null && oneShotClips.Length > 0)
+            {
+                // 같은 클립을 걷기/뛰기 모두에 사용 (볼륨과 간격으로 구분)
+                footstep.walkFootsteps = oneShotClips;
+                footstep.runFootsteps = oneShotClips;
+                Debug.Log($"[KillerSetupTool] 발소리 One Shots {oneShotClips.Length}개 로드됨");
+            }
+            else
+            {
+                Debug.LogWarning($"[KillerSetupTool] One Shots 발소리를 찾을 수 없습니다: {oneShotsPath}");
+            }
+        }
+
+        /// <summary>
+        /// 폴더에서 AudioClip 배열 로드
+        /// </summary>
+        private AudioClip[] LoadAudioClipsFromFolder(string folderPath)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:AudioClip", new[] { folderPath });
+            if (guids.Length == 0) return null;
+
+            var clips = new System.Collections.Generic.List<AudioClip>();
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                if (clip != null)
+                {
+                    clips.Add(clip);
+                }
+            }
+
+            clips.Sort((a, b) => a.name.CompareTo(b.name));
+            return clips.ToArray();
         }
 
         /// <summary>
@@ -366,14 +453,104 @@ namespace HorrorGame.Editor
         }
 
         /// <summary>
-        /// NavMesh 베이크
+        /// NavMesh 베이크 (NavMeshSurface 사용)
         /// </summary>
         private void BakeNavMesh()
         {
-            #pragma warning disable CS0618
-            UnityEditor.AI.NavMeshBuilder.BuildNavMesh();
-            #pragma warning restore CS0618
-            Debug.Log("[KillerSetupTool] NavMesh 베이크가 완료되었습니다.");
+            // 기존 NavMeshSurface 찾기
+            NavMeshSurface surface = FindObjectOfType<NavMeshSurface>();
+
+            if (surface == null)
+            {
+                // NavMeshSurface가 없으면 바닥에 추가
+                surface = CreateNavMeshSurface();
+            }
+
+            if (surface != null)
+            {
+                surface.BuildNavMesh();
+                EditorUtility.SetDirty(surface);
+                Debug.Log("[KillerSetupTool] NavMesh 베이크가 완료되었습니다.");
+            }
+            else
+            {
+                Debug.LogWarning("[KillerSetupTool] NavMeshSurface를 생성할 수 없습니다. 바닥 오브젝트가 있는지 확인하세요.");
+            }
+        }
+
+        /// <summary>
+        /// NavMeshSurface 자동 생성
+        /// </summary>
+        private NavMeshSurface CreateNavMeshSurface()
+        {
+            // 바닥 오브젝트 찾기 (여러 이름 시도)
+            string[] floorNames = { "Floor", "Ground", "Plane", "Terrain", "NavMeshFloor" };
+            GameObject floorObj = null;
+
+            foreach (string name in floorNames)
+            {
+                floorObj = GameObject.Find(name);
+                if (floorObj != null) break;
+            }
+
+            // 바닥을 못 찾으면 MeshRenderer가 있는 가장 큰 오브젝트 찾기
+            if (floorObj == null)
+            {
+                MeshRenderer[] renderers = FindObjectsOfType<MeshRenderer>();
+                float maxSize = 0f;
+                foreach (var renderer in renderers)
+                {
+                    float size = renderer.bounds.size.x * renderer.bounds.size.z;
+                    if (size > maxSize && renderer.bounds.size.y < 1f) // 납작한 오브젝트
+                    {
+                        maxSize = size;
+                        floorObj = renderer.gameObject;
+                    }
+                }
+            }
+
+            if (floorObj != null)
+            {
+                NavMeshSurface surface = floorObj.GetComponent<NavMeshSurface>();
+                if (surface == null)
+                {
+                    surface = floorObj.AddComponent<NavMeshSurface>();
+                    Undo.RegisterCreatedObjectUndo(surface, "Add NavMeshSurface");
+                }
+
+                // 설정
+                surface.collectObjects = CollectObjects.All;
+                surface.useGeometry = NavMeshCollectGeometry.RenderMeshes;
+
+                Debug.Log($"[KillerSetupTool] NavMeshSurface가 '{floorObj.name}'에 추가되었습니다.");
+                return surface;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// NavMesh 자동 설정 및 베이크
+        /// </summary>
+        private void EnsureNavMeshExists()
+        {
+            NavMeshSurface surface = FindObjectOfType<NavMeshSurface>();
+
+            if (surface == null)
+            {
+                surface = CreateNavMeshSurface();
+            }
+
+            if (surface != null)
+            {
+                // NavMesh 데이터가 없으면 베이크
+                if (surface.navMeshData == null)
+                {
+                    surface.BuildNavMesh();
+                    EditorUtility.SetDirty(surface);
+                    Debug.Log("[KillerSetupTool] NavMesh가 자동으로 베이크되었습니다.");
+                }
+            }
         }
 
         /// <summary>
@@ -391,6 +568,25 @@ namespace HorrorGame.Editor
             {
                 EditorUtility.DisplayDialog("오류",
                     $"Controller를 찾을 수 없습니다:\n{KILLER_CONTROLLER_PATH}", "확인");
+            }
+        }
+
+        /// <summary>
+        /// HorrorGameManager가 씬에 없으면 자동 생성
+        /// </summary>
+        private void EnsureGameManagerExists()
+        {
+            var existingManager = FindObjectOfType<HorrorGameManager>();
+            if (existingManager == null)
+            {
+                GameObject managerObj = new GameObject("HorrorGameManager");
+                managerObj.AddComponent<HorrorGameManager>();
+                Undo.RegisterCreatedObjectUndo(managerObj, "Create Horror Game Manager");
+                Debug.Log("[KillerSetupTool] HorrorGameManager가 자동 생성되었습니다.");
+            }
+            else
+            {
+                Debug.Log("[KillerSetupTool] HorrorGameManager가 이미 존재합니다.");
             }
         }
 

@@ -17,7 +17,20 @@ namespace HorrorGame
         public static HorrorGameManager Instance { get; private set; }
 
         [Header("Game State")]
-        public GameState currentState = GameState.Playing;
+        public GameState currentState = GameState.Menu;
+
+        [Header("Sequences")]
+        [Tooltip("도입 시퀀스 사용")]
+        public bool useIntroSequence = true;
+
+        [Tooltip("엔딩 시퀀스 사용")]
+        public bool useEndingSequence = true;
+
+        [Tooltip("IntroSequence 참조 (없으면 자동 탐색)")]
+        public IntroSequence introSequence;
+
+        [Tooltip("EndingSequence 참조 (없으면 자동 탐색)")]
+        public EndingSequence endingSequence;
 
         [Header("Win Condition")]
         [Tooltip("탈출에 필요한 열쇠 수")]
@@ -94,7 +107,28 @@ namespace HorrorGame
 
         private void Start()
         {
-            StartGame();
+            // 시퀀스 참조 자동 탐색
+            if (introSequence == null)
+            {
+                introSequence = FindObjectOfType<IntroSequence>();
+            }
+            if (endingSequence == null)
+            {
+                endingSequence = FindObjectOfType<EndingSequence>();
+            }
+
+            // 도입 시퀀스 사용 시
+            if (useIntroSequence && introSequence != null)
+            {
+                currentState = GameState.Menu;
+                // IntroSequence가 완료되면 StartGame() 호출됨
+                introSequence.OnIntroComplete.AddListener(StartGame);
+            }
+            else
+            {
+                // 도입 없이 바로 게임 시작
+                StartGame();
+            }
         }
 
         private void Update()
@@ -195,7 +229,15 @@ namespace HorrorGame
             OnGameOver?.Invoke();
             Debug.Log($"[HorrorGameManager] 게임 오버: {reason}");
 
-            // 재시작
+            // GameOverUI 표시 (YOU DIED 스타일)
+            var gameOverUI = FindObjectOfType<GameOverUI>();
+            if (gameOverUI != null)
+            {
+                gameOverUI.ShowGameOver();
+                return; // GameOverUI가 재시작을 처리함
+            }
+
+            // GameOverUI가 없으면 자동 재시작
             StartCoroutine(RestartAfterDelay());
         }
 
@@ -220,8 +262,16 @@ namespace HorrorGame
             OnVictory?.Invoke();
             Debug.Log("[HorrorGameManager] 승리! 탈출 성공!");
 
-            // 승리 씬으로 이동
-            StartCoroutine(LoadVictoryScene());
+            // 엔딩 시퀀스 사용 시
+            if (useEndingSequence && endingSequence != null)
+            {
+                endingSequence.PlayVictorySequence();
+            }
+            else
+            {
+                // 승리 씬으로 이동
+                StartCoroutine(LoadVictoryScene());
+            }
         }
 
         private IEnumerator RestartAfterDelay()
