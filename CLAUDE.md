@@ -429,3 +429,219 @@ Assets/Animations/
 - [ ] 발소리
 - [ ] 속삭임
 - [ ] 심장 박동
+
+## 개발 지침 및 해결된 이슈
+
+### 문(Door) 시스템
+
+#### 문 구조
+- `Door - Room1` (부모): Door 컴포넌트가 있는 빈 오브젝트, 회전 축 역할
+- `Door_01_C` (자식): 실제 문 메시와 Collider
+
+#### 문 피벗(경첩) 설정
+문이 중앙에서 회전하는 문제 해결:
+1. `Door_01_C`의 **localPosition**을 문 너비 절반만큼 이동 (예: X = 0.5)
+2. 부모 `Door - Room1`이 회전하면 자식이 경첩을 기준으로 회전함
+3. Door.cs의 `pivotOffset` 옵션도 사용 가능 (런타임에만 적용)
+
+```
+// MCP로 설정 예시
+update_component: Door - Room1/Door_01_C, Transform, localPosition: {x: 0.5, y: 0, z: 0}
+```
+
+#### 열쇠로 문 열기
+- PCPlayerController에서 `GetComponentInParent<Door>()` 사용 필수
+- 레이캐스트가 자식 메시(`Door_01_C`)에 히트하므로 부모에서 Door 컴포넌트 찾아야 함
+- 잠긴 문 + 맞는 열쇠 = 문 제거 (`Destroy(door.gameObject)`)
+
+### PC 플레이어 충돌 감지
+- `CharacterController`는 `OnCollisionEnter` 대신 `OnControllerColliderHit` 사용
+- Door.cs의 `OnTriggerEnter`/`OnCollisionEnter`는 CharacterController와 작동 안함
+- PCPlayerController.cs에 `OnControllerColliderHit` 메서드로 문 충돌 감지 구현됨
+
+### TextMesh Pro 한글 폰트
+- NanumGothic SDF.asset 사용
+- `m_AtlasPopulationMode: 1` (Dynamic) 설정 필요
+- `m_SourceFontFile` 참조 필요
+- 일부 한글 문자가 깨지면 Font Asset Creator로 한글 범위(AC00-D7AF) 재생성 필요
+
+### KillerAI 제자리 걸음 문제
+- Inspector에서 `patrolPoints` 배열에 순찰 지점 추가 필요
+- 순찰 지점이 없으면 경고 로그: `[KillerAI] 순찰 지점(patrolPoints)이 설정되지 않았습니다!`
+
+### KillerAnimator 파라미터 경고
+- Animator에 없는 파라미터 설정 시 경고 발생
+- `CheckAnimatorParameters()`로 파라미터 존재 여부 캐싱
+- `SetFloatSafe()`, `SetBoolSafe()`, `TriggerAnimationSafe()` 메서드로 안전하게 설정
+
+### IntroSequence PC 모드
+- YES 버튼 클릭을 위해 `Cursor.lockState = CursorLockMode.None` 필요
+- 도입 완료 후 `Cursor.lockState = CursorLockMode.Locked`로 복원
+
+## 자주 사용하는 MCP 명령어
+
+```
+# GameObject 선택
+select_gameobject: objectName: "Door - Room1"
+
+# 컴포넌트 업데이트
+update_component: objectPath: "Door - Room1", componentName: "HorrorGame.Door", componentData: {...}
+
+# Transform 위치 변경
+update_component: objectPath: "Door - Room1/Door_01_C", componentName: "Transform", componentData: {"localPosition": {"x": 0.5, "y": 0, "z": 0}}
+
+# 스크립트 재컴파일
+recompile_scripts
+
+# 콘솔 로그 확인
+get_console_logs: limit: 30, includeStackTrace: false
+```
+
+## VR 비밀번호 키패드 시스템
+
+### 시스템 구조
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     비밀번호 시스템 흐름                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  PasswordBookTrigger (book - Room3)                         │
+│  ├─ Awake: 랜덤 4자리 비밀번호 생성                           │
+│  ├─ Start: ReadableNote.noteContent에 비밀번호 표시           │
+│  └─ Start: PasswordPanel.SetPassword() 호출                 │
+│                                                             │
+│  PasswordPanel (Panel_Wood - Room5)                         │
+│  ├─ Interact() → ShowPasswordInput()                        │
+│  └─ VRPasswordKeypad.Instance.Open(title, length, callback, transform) │
+│                                                             │
+│  VRPasswordKeypad (World Space Canvas)                      │
+│  ├─ Open(): 타겟 오브젝트 앞에 키패드 배치                     │
+│  ├─ PositionNearTarget(): 타겟과 플레이어 사이에 배치          │
+│  ├─ OnNumberClick(): 숫자 입력 및 DisplayText 업데이트        │
+│  └─ SubmitPassword(): 콜백 호출 후 닫기                       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 주요 파일
+
+| 파일 | 역할 |
+|------|------|
+| `VRPasswordKeypad.cs` | World Space Canvas 키패드 UI, 싱글톤 |
+| `PasswordPanel.cs` | 비밀번호로 열리는 패널/문 컴포넌트 |
+| `PasswordChest.cs` | 비밀번호로 열리는 상자 컴포넌트 |
+| `PasswordBookTrigger.cs` | 책에서 랜덤 비밀번호 생성 및 배포 |
+| `GamePopupUI.cs` | 2D UI 폴백 (VR 키패드 없을 때) |
+| `PasswordKeypadSetup.cs` | 에디터 도구 (키패드 생성) |
+
+### 씬에 필요한 오브젝트
+
+1. **VRPasswordKeypad** - `Horror Game > VR 비밀번호 키패드 생성` 메뉴로 생성
+2. **book - Room3** - PasswordBookTrigger + ReadableNote 컴포넌트
+3. **Panel_Wood - Room5** - PasswordPanel 컴포넌트
+
+### ⚠️ 중요: 실패 케이스 및 주의사항
+
+#### 1. VRPasswordKeypad가 안 보이는 문제
+**원인**: `positionNearTarget=false` 또는 고정 위치 사용 시 플레이어가 볼 수 없는 위치에 배치
+**해결**:
+- `positionNearTarget = true` 설정
+- `Open()` 호출 시 반드시 `transform` 파라미터 전달
+```csharp
+// ✅ 올바른 호출
+VRPasswordKeypad.Instance.Open(title, length, callback, transform);
+
+// ❌ 잘못된 호출 (키패드가 고정 위치에 표시)
+VRPasswordKeypad.Instance.Open(title, length, callback);
+```
+
+#### 2. 키패드가 한 번만 열리는 문제
+**원인**: `if (isOpen) return;`으로 이미 열린 상태에서 재호출 차단
+**해결**: `if (isOpen) { Close(); }` 로 변경하여 닫고 다시 열기
+
+#### 3. 2D UI(GamePopupUI)가 계속 뜨는 문제
+**원인**: VRPasswordKeypad.Instance가 null (씬에 없음)
+**해결**:
+- 씬에 VRPasswordKeypad 오브젝트 존재 확인
+- `Horror Game > VR 비밀번호 키패드 생성` 메뉴로 생성
+
+#### 4. PC에서 키패드 버튼 클릭 안됨
+**원인**: PCPlayerController에서 UI Button 클릭 처리 누락
+**해결**: `TryClickUIButton()` 메서드 추가
+```csharp
+// PCPlayerController.cs
+private bool TryClickUIButton()
+{
+    // 레이캐스트로 Button 컴포넌트 찾기
+    Button button = hit.collider.GetComponent<Button>();
+    if (button == null)
+        button = hit.collider.GetComponentInParent<Button>();
+
+    if (button != null && button.interactable)
+    {
+        button.onClick.Invoke();
+        return true;
+    }
+    return false;
+}
+```
+
+#### 5. 비밀번호가 항상 "1234"인 문제
+**원인**: PasswordBookTrigger가 씬에 없거나 PasswordPanel을 찾지 못함
+**해결**:
+- book - Room3에 PasswordBookTrigger 컴포넌트 추가
+- PasswordBookTrigger.Start()에서 `FindObjectOfType<PasswordPanel>()` 자동 검색
+- Panel_Wood - Room5의 correctPassword를 빈 문자열로 설정 (PasswordBookTrigger가 설정)
+
+#### 6. World Space Canvas vs Screen Space Canvas 혼동
+| 구분 | World Space Canvas | Screen Space Canvas |
+|------|-------------------|---------------------|
+| 용도 | VR 키패드 | 2D HUD, 메뉴 |
+| 위치 | 3D 공간에 배치 | 화면에 고정 |
+| 상호작용 | XR Ray Interactor | 마우스/터치 |
+| 컴포넌트 | TrackedDeviceGraphicRaycaster | GraphicRaycaster |
+| 예시 | VRPasswordKeypad | GamePopupUI |
+
+### PC 테스트 방법
+
+1. **양손 레이 시스템**
+   - 레이가 2개 표시됨 (왼손: 빨강, 오른손: 초록)
+   - Tab키로 활성 손 전환
+   - 1키: 왼손 레이 조정 모드
+   - 2키: 오른손 레이 조정 모드
+   - R키: 레이 방향 리셋
+
+2. **상호작용**
+   - E키 또는 좌클릭: 상호작용/버튼 클릭
+   - 레이가 버튼을 가리키면 Hover 효과
+
+### 디버그 로그 확인
+
+```
+[PasswordBookTrigger] 비밀번호 패널에 비밀번호 설정: 7293
+[PasswordPanel] Panel_Wood - Room5 VR 비밀번호 키패드 표시 (타겟 전달)
+[VRPasswordKeypad] 키패드 열림: 비밀번호를 입력하세요, 4자리, 타겟: Panel_Wood - Room5
+[VRPasswordKeypad] 타겟 앞에 위치: (-13.2, 1.8, 5.3), 타겟: Panel_Wood - Room5
+[VRPasswordKeypad] 디스플레이 업데이트: 7 _ _ _
+[VRPasswordKeypad] 비밀번호 제출: 7293
+[PasswordPanel] Panel_Wood - Room5 비밀번호 정답!
+```
+
+## 싱글톤 추가 목록
+
+```csharp
+// UI 관련
+VRPasswordKeypad.Instance  // VR 비밀번호 키패드
+GamePopupUI.Instance       // 2D 팝업 UI
+```
+
+## 테스트 체크리스트 (비밀번호 시스템)
+
+- [ ] book - Room3 읽으면 랜덤 비밀번호 표시
+- [ ] Panel_Wood - Room5 상호작용 시 VR 키패드 표시
+- [ ] 키패드가 패널과 플레이어 사이에 배치
+- [ ] 숫자 입력 시 DisplayText에 숫자 표시 (마스킹 X)
+- [ ] 올바른 비밀번호 입력 시 패널 사라짐
+- [ ] 틀린 비밀번호 입력 시 오류 메시지
+- [ ] PC에서 E키/클릭으로 키패드 버튼 작동
