@@ -164,6 +164,9 @@ namespace HorrorGame.Editor
             // (양손 컨트롤러는 PCPlayerController에서 자동 생성됨)
             var pcController = playerRoot.AddComponent<PCPlayerController>();
 
+            // PlayerInventory 추가 (열쇠/아이템 수집에 필요)
+            var inventory = playerRoot.AddComponent<PlayerInventory>();
+
             // 컴포넌트 설정은 PCPlayerController.Start()에서 자동 처리됨
 
             // XR Device Simulator 추가

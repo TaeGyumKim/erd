@@ -237,10 +237,10 @@ public class TestGenerator : EditorWindow
         // 아이템 생성
         GenerateItems(items.transform);
 
-        // 캐릭터 생성 (플레이어, 살인마, 유령)
+        // 캐릭터 생성 (플레이어, 살인마)
         GeneratePlayer(characters.transform);
         GenerateKiller(characters.transform);
-        GenerateGhosts(characters.transform);
+        // 유령 시스템 폐기됨
 
         // 트리거 생성
         GenerateTriggers(triggers.transform);
@@ -313,7 +313,7 @@ public class TestGenerator : EditorWindow
 
         GeneratePlayer(characters.transform);
         GenerateKiller(characters.transform);
-        GenerateGhosts(characters.transform);
+        // 유령 시스템 폐기됨
 
         Debug.Log("[TestGenerator] 캐릭터 생성 완료");
     }
@@ -841,53 +841,7 @@ public class TestGenerator : EditorWindow
         Debug.Log("[TestGenerator] 살인마 생성됨");
     }
 
-    private void GenerateGhosts(Transform parent)
-    {
-        // 유령 1 (창문)
-        CreateGhost("Ghost_Window",
-            new Vector3(roomSize + corridorWidth + roomSize * 2, 1f, roomSize + 1f),
-            GhostController.GhostType.Window, parent);
-
-        // 유령 2 (러너)
-        CreateGhost("Ghost_Runner",
-            new Vector3(roomSize + corridorWidth, 1f, 0),
-            GhostController.GhostType.Runner, parent);
-
-        // 유령 3 (문 열기)
-        CreateGhost("Ghost_DoorOpener",
-            new Vector3(roomSize + corridorWidth + roomSize - 1f, 1f, -roomSize / 2 - corridorWidth / 2),
-            GhostController.GhostType.DoorOpener, parent);
-
-        Debug.Log("[TestGenerator] 유령 3개 생성됨");
-    }
-
-    private GameObject CreateGhost(string name, Vector3 position, GhostController.GhostType type, Transform parent)
-    {
-        var ghost = CreateFallbackPrimitive(name, PrimitiveType.Capsule, parent,
-            position, new Vector3(0.6f, 1f, 0.6f), Color.white);
-
-        // 투명 머티리얼 설정
-        var renderer = ghost.GetComponent<Renderer>();
-        var mat = new Material(Shader.Find("Standard"));
-        mat.name = $"GhostMaterial_{name}";
-        mat.SetFloat("_Mode", 3);
-        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        mat.SetInt("_ZWrite", 0);
-        mat.DisableKeyword("_ALPHATEST_ON");
-        mat.EnableKeyword("_ALPHABLEND_ON");
-        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        mat.renderQueue = 3000;
-        mat.color = new Color(0.5f, 0.5f, 1f, 0.5f);
-        renderer.sharedMaterial = mat;
-
-        var ghostController = ghost.AddComponent<GhostController>();
-        ghostController.ghostType = type;
-        ghostController.ghostVisual = ghost;
-        ghost.SetActive(false);
-
-        return ghost;
-    }
+    // 유령 시스템 폐기됨 - GenerateGhosts 및 CreateGhost 메서드 제거됨
 
     #endregion
 
@@ -1084,13 +1038,7 @@ public class TestGenerator : EditorWindow
         var killer = Object.FindFirstObjectByType<KillerAI>();
         if (killer != null) { rpm.killer = killer; connected++; }
 
-        var ghosts = Object.FindObjectsByType<GhostController>(FindObjectsSortMode.None);
-        foreach (var ghost in ghosts)
-        {
-            if (ghost.name.Contains("Window")) { rpm.ghost1 = ghost; connected++; }
-            else if (ghost.name.Contains("Runner")) { rpm.ghost2 = ghost; connected++; }
-            else if (ghost.name.Contains("DoorOpener")) { rpm.ghost3 = ghost; connected++; }
-        }
+        // 유령 시스템 폐기됨
 
         // 조명
         var lighting = GameObject.Find("Lighting_Room3");

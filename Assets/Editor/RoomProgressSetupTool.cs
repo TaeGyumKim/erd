@@ -147,15 +147,7 @@ public class RoomProgressSetupTool : EditorWindow
             if (GUILayout.Button("살인마 (Killer) 생성 - 캐릭터 + 마스크", GUILayout.Height(30)))
                 CreateKillerWithAsset();
 
-            EditorGUILayout.Space(3);
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Ghost1\n(창문)"))
-                CreateGhostWithCharacter(GhostController.GhostType.Window, "ghost 1");
-            if (GUILayout.Button("Ghost2\n(러너)"))
-                CreateGhostWithCharacter(GhostController.GhostType.Runner, "ghost 2");
-            if (GUILayout.Button("Ghost3\n(문열기)"))
-                CreateGhostWithCharacter(GhostController.GhostType.DoorOpener, "ghost 3");
-            EditorGUILayout.EndHorizontal();
+            // 유령 시스템 폐기됨
         });
 
         // 6. 문 (Door)
@@ -199,7 +191,6 @@ public class RoomProgressSetupTool : EditorWindow
             "Door - Room3: Room3 문\n" +
             "book - Room3: 스토리 책\n" +
             "Lighting - Room3: 라이트 3개\n" +
-            "ghost 1/2/3: 유령\n" +
             "Door - Room4: Room4 문 (잠금 없음)\n" +
             "chest - Room4: 비밀번호 상자\n" +
             "Panel_Wood - Room5: 탈출문",
@@ -286,13 +277,7 @@ public class RoomProgressSetupTool : EditorWindow
         if (killer) killer.transform.SetParent(charactersParent.transform);
 
         // 8. 유령
-        var ghost1 = CreateGhostWithCharacter(GhostController.GhostType.Window, "ghost 1");
-        var ghost2 = CreateGhostWithCharacter(GhostController.GhostType.Runner, "ghost 2");
-        var ghost3 = CreateGhostWithCharacter(GhostController.GhostType.DoorOpener, "ghost 3");
-
-        if (ghost1) ghost1.transform.SetParent(charactersParent.transform);
-        if (ghost2) ghost2.transform.SetParent(charactersParent.transform);
-        if (ghost3) ghost3.transform.SetParent(charactersParent.transform);
+        // 유령 시스템 폐기됨
 
         // 9. Room Trigger
         CreateAllRoomTriggersUnderParent(triggersParent.transform);
@@ -653,68 +638,7 @@ public class RoomProgressSetupTool : EditorWindow
         return killer;
     }
 
-    private GameObject CreateGhostWithCharacter(GhostController.GhostType type, string name)
-    {
-        var characterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetPaths.KillerPrefab);
-
-        GameObject ghost;
-        if (characterPrefab != null)
-        {
-            ghost = (GameObject)PrefabUtility.InstantiatePrefab(characterPrefab);
-        }
-        else
-        {
-            ghost = new GameObject(name);
-            var capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            capsule.transform.SetParent(ghost.transform);
-            capsule.transform.localPosition = Vector3.up;
-            // 반투명 효과
-            var renderer = capsule.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var mat = new Material(Shader.Find("Standard"));
-                mat.color = new Color(0.5f, 0.5f, 1f, 0.5f);
-                mat.SetFloat("_Mode", 3); // Transparent
-                renderer.material = mat;
-            }
-        }
-
-        ghost.name = name;
-
-        // GhostController 추가
-        var ghostController = ghost.AddComponent<GhostController>();
-        ghostController.ghostType = type;
-
-        // AudioSource
-        if (ghost.GetComponent<AudioSource>() == null)
-        {
-            ghost.AddComponent<AudioSource>();
-        }
-
-        // 시작/목표 위치 생성
-        var startPos = new GameObject($"{name}_StartPos");
-        startPos.transform.SetParent(ghost.transform);
-        startPos.transform.localPosition = Vector3.zero;
-        ghostController.startPosition = startPos.transform;
-
-        var targetPos = new GameObject($"{name}_TargetPos");
-        targetPos.transform.SetParent(ghost.transform);
-        targetPos.transform.localPosition = Vector3.forward * 5f;
-        ghostController.targetPosition = targetPos.transform;
-
-        ghost.SetActive(false); // 초기 비활성화
-
-        if (Selection.activeGameObject != null)
-        {
-            ghost.transform.position = Selection.activeGameObject.transform.position;
-        }
-
-        Selection.activeGameObject = ghost;
-        Undo.RegisterCreatedObjectUndo(ghost, $"Create Ghost {name}");
-
-        Debug.Log($"[RoomProgressSetup] {name} (타입: {type}) 생성됨");
-        return ghost;
-    }
+    // 유령 시스템 폐기됨 - CreateGhostWithCharacter 메서드 제거됨
 
     private GameObject CreateRoom3Lighting()
     {
@@ -1013,15 +937,7 @@ public class RoomProgressSetupTool : EditorWindow
             connected++;
         }
 
-        // 유령
-        var ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
-        foreach (var ghost in ghosts)
-        {
-            if (ghost.name.Contains("1")) rpm.ghost1 = ghost;
-            else if (ghost.name.Contains("2")) rpm.ghost2 = ghost;
-            else if (ghost.name.Contains("3")) rpm.ghost3 = ghost;
-            connected++;
-        }
+        // 유령 시스템 폐기됨
 
         // Room3 조명
         var lightingRoom3 = GameObject.Find("Lighting - Room3");
@@ -1071,8 +987,7 @@ public class RoomProgressSetupTool : EditorWindow
         var triggers = FindObjectsByType<RoomTrigger>(FindObjectsSortMode.None);
         Debug.Log($"[검증] RoomTrigger {triggers.Length}개 발견");
 
-        var ghosts = FindObjectsByType<GhostController>(FindObjectsSortMode.None);
-        Debug.Log($"[검증] GhostController {ghosts.Length}개 발견");
+        // 유령 시스템 폐기됨
 
         if (errors == 0 && warnings == 0)
         {

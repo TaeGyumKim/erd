@@ -625,10 +625,7 @@ namespace HorrorGame.Editor
                 CreateKiller();
             }
 
-            if (GUILayout.Button("유령 (GhostAI)", GUILayout.Height(30)))
-            {
-                CreateGhost();
-            }
+            // 유령 시스템 폐기됨
 
             EditorGUILayout.EndHorizontal();
 
@@ -734,44 +731,7 @@ namespace HorrorGame.Editor
             Undo.RegisterCreatedObjectUndo(killer, "Create Killer");
         }
 
-        private void CreateGhost()
-        {
-            GameObject ghost = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            ghost.name = "Ghost";
-            ghost.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
-
-            // 반투명 머티리얼
-            var renderer = ghost.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                Material mat = new Material(Shader.Find("Standard"));
-                mat.SetFloat("_Mode", 3); // Transparent
-                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                mat.SetInt("_ZWrite", 0);
-                mat.DisableKeyword("_ALPHATEST_ON");
-                mat.EnableKeyword("_ALPHABLEND_ON");
-                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                mat.renderQueue = 3000;
-                mat.color = new Color(0.5f, 0.5f, 1f, 0.3f);
-                renderer.material = mat;
-            }
-
-            ghost.AddComponent<GhostAI>();
-            ghost.AddComponent<UnityEngine.AI.NavMeshAgent>();
-
-            // 콜라이더 제거 (유령은 통과)
-            DestroyImmediate(ghost.GetComponent<Collider>());
-
-            SceneView sceneView = SceneView.lastActiveSceneView;
-            if (sceneView != null)
-            {
-                ghost.transform.position = sceneView.pivot;
-            }
-
-            Selection.activeGameObject = ghost;
-            Undo.RegisterCreatedObjectUndo(ghost, "Create Ghost");
-        }
+        // 유령 시스템 폐기됨 - CreateGhost 메서드 제거됨
 
         private void CreatePatrolPoint()
         {
@@ -870,7 +830,7 @@ namespace HorrorGame.Editor
 
             // 5. 캐릭터
             CreateKiller();
-            CreateGhost();
+            // 유령 시스템 폐기됨
 
             // 6. 숨기 장소
             CreateHidingSpot();
