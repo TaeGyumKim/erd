@@ -21,6 +21,9 @@ namespace HorrorGame
         [Tooltip("자동 탈출 (조건 충족 시 바로 탈출)")]
         public bool autoEscape = true;
 
+        [Tooltip("열쇠 확인 건너뛰기 (true면 무조건 승리)")]
+        public bool skipKeyCheck = false;
+
         [Header("Locked Door (Optional)")]
         [Tooltip("탈출구 문 (열쇠 조건 충족 시 열림)")]
         public Door escapeDoor;
@@ -93,38 +96,50 @@ namespace HorrorGame
 
         private void OnTriggerEnter(Collider other)
         {
-            // 플레이어 확인
-            var player = other.GetComponent<VRPlayer>();
-            if (player == null)
-            {
-                player = other.GetComponentInParent<VRPlayer>();
-            }
+            if (!IsPlayer(other)) return;
 
-            if (player != null)
-            {
-                IsPlayerInZone = true;
-                Debug.Log("[EscapeZone] 플레이어가 탈출 구역에 진입");
+            IsPlayerInZone = true;
+            Debug.Log("[EscapeZone] 플레이어가 탈출 구역에 진입");
 
-                if (autoEscape)
-                {
-                    TryEscape();
-                }
+            if (autoEscape)
+            {
+                TryEscape();
             }
         }
 
         private void OnTriggerExit(Collider other)
         {
-            var player = other.GetComponent<VRPlayer>();
-            if (player == null)
+            if (!IsPlayer(other)) return;
+
+            IsPlayerInZone = false;
+            Debug.Log("[EscapeZone] 플레이어가 탈출 구역에서 나감");
+        }
+
+        /// <summary>
+        /// 플레이어인지 확인 (VR + PC 플레이어 모두 지원)
+        /// </summary>
+        private bool IsPlayer(Collider other)
+        {
+            // VR 플레이어
+            if (other.GetComponent<VRPlayer>() != null || other.GetComponentInParent<VRPlayer>() != null)
+                return true;
+
+            // PC 플레이어
+            if (other.GetComponent<PCPlayerController>() != null || other.GetComponentInParent<PCPlayerController>() != null)
+                return true;
+
+            // CharacterController (PC 플레이어)
+            if (other.GetComponent<CharacterController>() != null)
             {
-                player = other.GetComponentInParent<VRPlayer>();
+                var pcPlayer = other.GetComponentInParent<PCPlayerController>();
+                if (pcPlayer != null) return true;
             }
 
-            if (player != null)
-            {
-                IsPlayerInZone = false;
-                Debug.Log("[EscapeZone] 플레이어가 탈출 구역에서 나감");
-            }
+            // Player 태그
+            if (other.CompareTag("Player"))
+                return true;
+
+            return false;
         }
 
         /// <summary>
@@ -132,6 +147,12 @@ namespace HorrorGame
         /// </summary>
         public bool CanEscape()
         {
+            // 열쇠 확인 건너뛰기 옵션이 true면 무조건 탈출 가능
+            if (skipKeyCheck)
+            {
+                return true;
+            }
+
             int keysNeeded = requiredKeys > 0 ? requiredKeys :
                 (HorrorGameManager.Instance != null ? HorrorGameManager.Instance.requiredKeysToEscape : 0);
 

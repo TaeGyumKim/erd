@@ -45,6 +45,8 @@ namespace HorrorGame
 
         private AudioSource audioSource;
         private VRPlayer hidingPlayer;
+        private bool isPCPlayerHiding = false;
+        private HidingSpot currentHidingSpot; // 현재 PC플레이어가 숨어있는 장소 (static)
 
         protected override void Awake()
         {
@@ -117,6 +119,68 @@ namespace HorrorGame
 
             OnPlayerHide?.Invoke();
             Debug.Log($"[HidingSpot] {player.name}이(가) {gameObject.name}에 숨음");
+        }
+
+        /// <summary>
+        /// 숨기 시작 (PC 플레이어용)
+        /// </summary>
+        public void EnterHidingPC(PCPlayerController player)
+        {
+            if (!canHide || IsOccupied) return;
+
+            IsOccupied = true;
+            isPCPlayerHiding = true;
+
+            // PC 플레이어 숨기 상태로 전환
+            player.StartHiding(hidePosition);
+
+            // 비주얼 업데이트 (문 닫기 등)
+            if (hidingVisual != null)
+            {
+                // 문 닫기 애니메이션
+                StartCoroutine(RotateVisual(closedAngle));
+            }
+
+            // 사운드
+            if (enterSound != null)
+            {
+                audioSource.PlayOneShot(enterSound);
+            }
+
+            OnPlayerHide?.Invoke();
+            Debug.Log($"[HidingSpot] PC플레이어가 {gameObject.name}에 숨음");
+        }
+
+        /// <summary>
+        /// 숨기 종료 (PC 플레이어용)
+        /// </summary>
+        public void ExitHidingPC()
+        {
+            if (!IsOccupied || !isPCPlayerHiding) return;
+
+            var pcPlayer = PCPlayerController.Instance;
+            if (pcPlayer != null)
+            {
+                pcPlayer.StopHiding();
+            }
+
+            // 비주얼 업데이트 (문 열기 등)
+            if (hidingVisual != null)
+            {
+                StartCoroutine(RotateVisual(openAngle));
+            }
+
+            // 사운드
+            if (exitSound != null)
+            {
+                audioSource.PlayOneShot(exitSound);
+            }
+
+            OnPlayerExit?.Invoke();
+            Debug.Log($"[HidingSpot] PC플레이어가 {gameObject.name}에서 나옴");
+
+            IsOccupied = false;
+            isPCPlayerHiding = false;
         }
 
         /// <summary>

@@ -66,11 +66,6 @@ namespace HorrorGame
         public Transform killerSpawnPoint;
         public Transform killerWindowPosition; // 창문 뒤 위치
 
-        [Tooltip("유령들")]
-        public GhostController ghost1; // Room3 창문
-        public GhostController ghost2; // Room2 복도
-        public GhostController ghost3; // Room4 문
-
         [Header("Hiding")]
         public HidingSpot hidingSpotRoom2;
         [Tooltip("숨기 제한 시간")]
@@ -169,10 +164,7 @@ namespace HorrorGame
             // Room3 라이트 끄기
             SetRoom3Lights(false);
 
-            // 유령들 비활성화
-            if (ghost1 != null) ghost1.gameObject.SetActive(false);
-            if (ghost2 != null) ghost2.gameObject.SetActive(false);
-            if (ghost3 != null) ghost3.gameObject.SetActive(false);
+            // 유령 시스템 폐기됨
 
             // Room4 문 열린 상태로 (열쇠 없음)
             if (doorRoom4 != null)
@@ -323,12 +315,7 @@ namespace HorrorGame
         /// </summary>
         private IEnumerator RunToHideSequence()
         {
-            // ghost2 - 복도에서 뛰어감
-            if (ghost2 != null)
-            {
-                ghost2.gameObject.SetActive(true);
-                ghost2.RunAway();
-            }
+            // 유령 시스템 폐기됨 - 시각적 연출 없이 진행
 
             // 숨기 제한 시간 시작
             hideTimer = hideTimeLimitAfterKiller;
@@ -359,13 +346,8 @@ namespace HorrorGame
         {
             OnHideSuccess?.Invoke();
 
-            // ghost3 - Room4에서 문 열고 나옴
+            // 유령 시스템 폐기됨 - 시각적 연출 없이 진행
             yield return new WaitForSeconds(1f);
-            if (ghost3 != null)
-            {
-                ghost3.gameObject.SetActive(true);
-                ghost3.OpenDoorAndAppear();
-            }
 
             // 살인마 Room2 순찰
             if (killer != null)

@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
@@ -33,6 +35,10 @@ namespace HorrorGame
         [SerializeField] private float walkNoiseRadius = 3f;
         [SerializeField] private float sprintNoiseRadius = 8f;
         [SerializeField] private float noiseInterval = 0.5f;
+
+        [Header("레이캐스트 설정")]
+        [Tooltip("레이캐스트에서 무시할 레이어 (Player, Ignore Raycast 등)")]
+        [SerializeField] private LayerMask ignoreLayers = 0;
 
         [Header("양손 컨트롤러 시뮬레이션")]
         [Tooltip("왼손 컨트롤러 (Ray Interactor)")]
@@ -91,6 +97,15 @@ namespace HorrorGame
         // 레이 시각화
         private LineRenderer leftHandLine;
         private LineRenderer rightHandLine;
+
+        // 숨기 장소
+        private HidingSpot currentHidingSpot;
+        private BoxHidingSpot currentBoxHidingSpot;
+
+        // 현재 들고 있는 아이템
+        private PickupItem heldItem;
+        public PickupItem HeldItem => heldItem;
+        public bool IsHoldingItem => heldItem != null;
 
         // 레이 조정 모드
         private enum RayAimMode { None, LeftHand, RightHand }
@@ -186,8 +201,8 @@ namespace HorrorGame
             rightHand.localPosition = rightHandOffset;
 
             // XR Ray Interactor 설정
-            SetupHandRayInteractor(leftHand, ref leftRayInteractor, ref leftHandLine, new Color(1f, 0.3f, 0.3f, 0.8f));
-            SetupHandRayInteractor(rightHand, ref rightRayInteractor, ref rightHandLine, new Color(0.3f, 1f, 0.3f, 0.8f));
+            SetupHandRayInteractor(leftHand, ref leftRayInteractor, ref leftHandLine, new Color(1f, 0.2f, 0.2f, 1f));  // 빨간색 (왼손)
+            SetupHandRayInteractor(rightHand, ref rightRayInteractor, ref rightHandLine, new Color(0.2f, 1f, 0.2f, 1f));  // 초록색 (오른손)
 
             Debug.Log("[PCPlayerController] 양손 컨트롤러 설정 완료");
         }
@@ -217,13 +232,24 @@ namespace HorrorGame
             {
                 lineRenderer = hand.gameObject.AddComponent<LineRenderer>();
             }
-            lineRenderer.startWidth = 0.01f;
+            lineRenderer.startWidth = 0.015f;
             lineRenderer.endWidth = 0.005f;
             lineRenderer.positionCount = 2;
-            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+
+            // Unlit 셰이더로 항상 밝게 보이도록 설정
+            Material rayMaterial = new Material(Shader.Find("Unlit/Color"));
+            if (rayMaterial.shader == null)
+            {
+                rayMaterial = new Material(Shader.Find("Sprites/Default"));
+            }
+            rayMaterial.color = rayColor;
+            rayMaterial.hideFlags = HideFlags.HideAndDontSave; // 에디터 저장 시 경고 방지
+            lineRenderer.material = rayMaterial;
             lineRenderer.startColor = rayColor;
-            lineRenderer.endColor = new Color(rayColor.r, rayColor.g, rayColor.b, 0.2f);
+            lineRenderer.endColor = new Color(rayColor.r, rayColor.g, rayColor.b, 0.5f);
             lineRenderer.enabled = true;
+            lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lineRenderer.receiveShadows = false;
         }
 
         private void Update()
@@ -248,6 +274,12 @@ namespace HorrorGame
 
             HandleInput();
             UpdateHandControllers();
+
+            // 손전등으로 살인마 스턴 체크
+            if (flashlightOn)
+            {
+                CheckFlashlightStun();
+            }
         }
 
         #region Cursor Lock
@@ -278,7 +310,11 @@ namespace HorrorGame
 
         private void HandleMovement()
         {
-            if (controller == null) return;
+            // CharacterController가 없거나 비활성화된 경우 (숨기 상태 등) 이동 처리 안함
+            if (controller == null || !controller.enabled) return;
+
+            // 숨어있으면 이동 안함
+            if (IsHiding) return;
 
             float horizontal = Input.GetAxis("Horizontal");
             float vertical = Input.GetAxis("Vertical");
@@ -452,7 +488,26 @@ namespace HorrorGame
             // Q - 숨기 해제
             if (Input.GetKeyDown(KeyCode.Q) && IsHiding)
             {
-                StopHiding();
+                if (currentBoxHidingSpot != null)
+                {
+                    // 상자에서 나오기
+                    currentBoxHidingSpot.ExitHiding();
+                }
+                else if (currentHidingSpot != null)
+                {
+                    currentHidingSpot.ExitHidingPC();
+                    currentHidingSpot = null;
+                }
+                else
+                {
+                    StopHiding();
+                }
+            }
+
+            // G - 아이템 내려놓기
+            if (Input.GetKeyDown(KeyCode.G) && IsHoldingItem)
+            {
+                DropHeldItem(false);
             }
         }
 
@@ -581,7 +636,9 @@ namespace HorrorGame
             Ray ray = new Ray(hand.position, direction);
             float rayLength = interactionRange;
 
-            if (Physics.Raycast(ray, out RaycastHit hit, interactionRange))
+            // 레이캐스트 마스크 설정 (ignoreLayers를 제외한 모든 레이어)
+            int layerMask = ~ignoreLayers.value;
+            if (Physics.Raycast(ray, out RaycastHit hit, interactionRange, layerMask))
             {
                 rayLength = hit.distance;
             }
@@ -644,18 +701,197 @@ namespace HorrorGame
                 }
             }
 
+            // UI Button 클릭 처리 (VRPasswordKeypad 등)
+            if (TryClickUIButton())
+            {
+                return;
+            }
+
             // 레거시 상호작용
             TryInteractLegacy();
         }
 
-        private void TryInteractLegacy()
+        /// <summary>
+        /// UI Button 클릭 시도 (레이캐스트로 World Space Canvas의 버튼 클릭)
+        /// </summary>
+        private bool TryClickUIButton()
         {
-            if (playerCamera == null) return;
+            Transform activeHand = GetActiveHand();
+            if (activeHand == null && playerCamera == null) return false;
 
-            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            Vector3 rayOrigin;
+            Vector3 rayDirection;
+
+            if (activeHand != null)
+            {
+                rayOrigin = activeHand.position;
+                rayDirection = activeHand.forward;
+            }
+            else
+            {
+                rayOrigin = playerCamera.transform.position;
+                rayDirection = playerCamera.transform.forward;
+            }
+
+            Ray ray = new Ray(rayOrigin, rayDirection);
+
+            // UI 레이어 또는 모든 레이어에서 Graphic Raycaster가 있는 Canvas 찾기
             if (Physics.Raycast(ray, out RaycastHit hit, interactionRange))
             {
-                // InteractableObject
+                // Button 컴포넌트 찾기 (자신 또는 부모)
+                Button button = hit.collider.GetComponent<Button>();
+                if (button == null)
+                {
+                    button = hit.collider.GetComponentInParent<Button>();
+                }
+
+                if (button != null && button.interactable)
+                {
+                    Debug.Log($"[PCPlayerController] UI 버튼 클릭: {button.gameObject.name}");
+                    button.onClick.Invoke();
+                    return true;
+                }
+
+                // Canvas의 자식에서 Button 찾기 (BoxCollider가 Canvas에 있는 경우)
+                Canvas canvas = hit.collider.GetComponent<Canvas>();
+                if (canvas == null)
+                {
+                    canvas = hit.collider.GetComponentInParent<Canvas>();
+                }
+
+                if (canvas != null && canvas.renderMode == RenderMode.WorldSpace)
+                {
+                    // World Space Canvas에서 실제 히트 위치를 기준으로 버튼 찾기
+                    Button[] buttons = canvas.GetComponentsInChildren<Button>();
+                    foreach (var btn in buttons)
+                    {
+                        RectTransform rectTransform = btn.GetComponent<RectTransform>();
+                        if (rectTransform != null && RectTransformUtility.RectangleContainsScreenPoint(
+                            rectTransform,
+                            Camera.main.WorldToScreenPoint(hit.point),
+                            Camera.main))
+                        {
+                            if (btn.interactable)
+                            {
+                                Debug.Log($"[PCPlayerController] UI 버튼 클릭 (Canvas): {btn.gameObject.name}");
+                                btn.onClick.Invoke();
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private void TryInteractLegacy()
+        {
+            // 현재 활성 손의 레이 방향 사용
+            Transform activeHand = GetActiveHand();
+            if (activeHand == null && playerCamera == null) return;
+
+            Vector3 rayOrigin;
+            Vector3 rayDirection;
+
+            if (activeHand != null)
+            {
+                rayOrigin = activeHand.position;
+                rayDirection = activeHand.forward;
+            }
+            else
+            {
+                rayOrigin = playerCamera.transform.position;
+                rayDirection = playerCamera.transform.forward;
+            }
+
+            // 레이캐스트 마스크 설정 (ignoreLayers를 제외한 모든 레이어)
+            int layerMask = ~ignoreLayers.value;
+
+            Ray ray = new Ray(rayOrigin, rayDirection);
+            if (Physics.Raycast(ray, out RaycastHit hit, interactionRange, layerMask))
+            {
+                // 디버그: 레이캐스트 히트 대상 로그
+                Debug.Log($"[PCPlayerController] 레이캐스트 히트: {hit.collider.gameObject.name} (Layer: {LayerMask.LayerToName(hit.collider.gameObject.layer)})");
+
+                // Door (InteractableObject보다 먼저 체크 - 더 구체적인 타입)
+                // 자식 오브젝트에서 히트할 수 있으므로 부모에서도 찾기
+                var door = hit.collider.GetComponent<Door>();
+                if (door == null)
+                {
+                    door = hit.collider.GetComponentInParent<Door>();
+                }
+                if (door != null)
+                {
+                    Debug.Log($"[PCPlayerController] 문 상호작용: {hit.collider.gameObject.name}, 잠김: {door.IsLocked}, 필요 키: {door.requiredKeyId}");
+
+                    // 들고 있는 키가 있고 문이 잠겨있으면 키 사용 시도
+                    if (IsHoldingItem && door.IsLocked && heldItem is KeyItem heldKey)
+                    {
+                        Debug.Log($"[PCPlayerController] 들고 있는 키: {heldKey.keyId}, 문이 필요한 키: {door.requiredKeyId}");
+
+                        if (door.requiredKeyId == heldKey.keyId)
+                        {
+                            Debug.Log($"[PCPlayerController] 키 사용: {heldKey.keyId}");
+
+                            // 키 파괴 처리
+                            DestroyHeldKey(heldKey);
+
+                            // 문 잠금 해제 후 열기 (삭제하지 않음)
+                            Debug.Log($"[PCPlayerController] 키로 문 열기: {door.requiredKeyId}");
+                            door.Unlock();
+                            door.OpenDoor();
+                            return;
+                        }
+                        else
+                        {
+                            Debug.Log($"[PCPlayerController] 키 불일치 - 들고 있는 키: {heldKey.keyId}, 필요한 키: {door.requiredKeyId}");
+                        }
+                    }
+
+                    door.Interact();
+                    return;
+                }
+
+                // KeyItem (PickupItem 상속, 우선 체크)
+                var keyItem = hit.collider.GetComponent<KeyItem>();
+                if (keyItem == null)
+                {
+                    keyItem = hit.collider.GetComponentInParent<KeyItem>();
+                }
+                if (keyItem != null)
+                {
+                    // 이미 아이템을 들고 있으면 교체
+                    if (IsHoldingItem)
+                    {
+                        DropHeldItem(false);
+                    }
+
+                    Debug.Log($"[PCPlayerController] 키 집기: {keyItem.gameObject.name} (keyId: {keyItem.keyId})");
+                    HoldItem(keyItem);
+                    return;
+                }
+
+                // PickupItem (일반 아이템)
+                var pickupItem = hit.collider.GetComponent<PickupItem>();
+                if (pickupItem == null)
+                {
+                    pickupItem = hit.collider.GetComponentInParent<PickupItem>();
+                }
+                if (pickupItem != null)
+                {
+                    // 이미 아이템을 들고 있으면 교체, 아니면 집기
+                    if (IsHoldingItem)
+                    {
+                        DropHeldItem(false); // 현재 아이템 내려놓기
+                    }
+
+                    Debug.Log($"[PCPlayerController] 아이템 집기: {hit.collider.gameObject.name}");
+                    HoldItem(pickupItem);
+                    return;
+                }
+
+                // InteractableObject (기본 상호작용)
                 var customInteractable = hit.collider.GetComponent<InteractableObject>();
                 if (customInteractable != null)
                 {
@@ -664,21 +900,75 @@ namespace HorrorGame
                     return;
                 }
 
-                // Door
-                var door = hit.collider.GetComponent<Door>();
-                if (door != null)
-                {
-                    Debug.Log($"[PCPlayerController] 문 상호작용: {hit.collider.gameObject.name}");
-                    door.Interact();
-                    return;
-                }
-
                 // HidingSpot
                 var hidingSpot = hit.collider.GetComponent<HidingSpot>();
                 if (hidingSpot != null)
                 {
                     Debug.Log($"[PCPlayerController] 숨기 장소: {hit.collider.gameObject.name}");
-                    StartHiding(hidingSpot.transform);
+                    if (IsHiding)
+                    {
+                        // 이미 숨어있으면 나오기
+                        hidingSpot.ExitHidingPC();
+                        currentHidingSpot = null;
+                    }
+                    else
+                    {
+                        // 숨기
+                        hidingSpot.EnterHidingPC(this);
+                        currentHidingSpot = hidingSpot;
+                    }
+                    return;
+                }
+
+                // BoxHidingSpot (상자에서 숨기)
+                var boxHidingSpot = hit.collider.GetComponent<BoxHidingSpot>();
+                if (boxHidingSpot == null)
+                {
+                    boxHidingSpot = hit.collider.GetComponentInParent<BoxHidingSpot>();
+                }
+                if (boxHidingSpot != null)
+                {
+                    Debug.Log($"[PCPlayerController] 상자 숨기 장소: {hit.collider.gameObject.name}");
+                    boxHidingSpot.Interact(this);
+                    return;
+                }
+
+                // SlidingDoor (탈출문)
+                var slidingDoor = hit.collider.GetComponent<SlidingDoor>();
+                if (slidingDoor != null)
+                {
+                    Debug.Log($"[PCPlayerController] 슬라이딩 문: {hit.collider.gameObject.name}");
+                    slidingDoor.TryInteract();
+                    return;
+                }
+
+                // ReadableNote (책/메모)
+                var readableNote = hit.collider.GetComponent<ReadableNote>();
+                if (readableNote != null)
+                {
+                    Debug.Log($"[PCPlayerController] 메모 읽기: {hit.collider.gameObject.name}");
+                    readableNote.OpenNote();
+                    return;
+                }
+
+                // PasswordChest (비밀번호 상자)
+                var passwordChest = hit.collider.GetComponent<PasswordChest>();
+                if (passwordChest != null)
+                {
+                    Debug.Log($"[PCPlayerController] 비밀번호 상자: {hit.collider.gameObject.name}");
+                    if (passwordChest.isOpen)
+                    {
+                        passwordChest.TakeItem();
+                    }
+                    else if (!passwordChest.isLocked)
+                    {
+                        passwordChest.OpenChest();
+                    }
+                    else
+                    {
+                        // 비밀번호 입력 UI 표시
+                        passwordChest.ShowPasswordUI();
+                    }
                     return;
                 }
             }
@@ -687,6 +977,14 @@ namespace HorrorGame
         #endregion
 
         #region Flashlight
+
+        [Header("손전등 스턴 설정")]
+        [SerializeField] private float flashlightStunRange = 12f;
+        [SerializeField] private float flashlightStunAngle = 45f;
+        [SerializeField] private float flashlightStunTime = 0.15f; // 빛을 비춰야 하는 시간 (0.15초 - VR에서 빠르게 비추기 가능)
+        [SerializeField] private bool showStunProgress = false; // 스턴 진행도 표시 (0.15초라 불필요)
+        private float flashlightStunTimer = 0f;
+        private KillerAI currentTargetKiller = null;
 
         private void ToggleFlashlight()
         {
@@ -706,6 +1004,83 @@ namespace HorrorGame
                 else
                 {
                     Debug.Log("[PCPlayerController] 손전등을 찾을 수 없습니다.");
+                }
+            }
+
+            // 손전등 끄면 스턴 타이머 리셋
+            if (!flashlightOn)
+            {
+                flashlightStunTimer = 0f;
+                currentTargetKiller = null;
+            }
+        }
+
+        /// <summary>
+        /// 손전등으로 살인마 스턴 체크
+        /// 개선: 살인마 어느 방향에서든 비추면 스턴 가능 (0.5초로 단축)
+        /// </summary>
+        private void CheckFlashlightStun()
+        {
+            if (playerCamera == null) return;
+
+            // 카메라 전방으로 레이캐스트
+            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit, flashlightStunRange))
+            {
+                // 살인마인지 확인
+                KillerAI killer = hit.collider.GetComponent<KillerAI>();
+                if (killer == null)
+                {
+                    killer = hit.collider.GetComponentInParent<KillerAI>();
+                }
+
+                if (killer != null && !killer.IsStunned)
+                {
+                    // 같은 살인마에게 계속 비추고 있으면 타이머 증가
+                    if (currentTargetKiller == killer)
+                    {
+                        flashlightStunTimer += Time.deltaTime;
+
+                        // 스턴 진행도 로그 (디버그용)
+                        if (showStunProgress && flashlightStunTimer > 0.1f)
+                        {
+                            float progress = (flashlightStunTimer / flashlightStunTime) * 100f;
+                            if (progress < 100f)
+                            {
+                                Debug.Log($"[PCPlayerController] 손전등 스턴 진행: {progress:F0}%");
+                            }
+                        }
+
+                        // 스턴 시간 도달
+                        if (flashlightStunTimer >= flashlightStunTime)
+                        {
+                            killer.StunByFlashlight();
+                            flashlightStunTimer = 0f;
+                            currentTargetKiller = null;
+                            Debug.Log("[PCPlayerController] 손전등으로 살인마 스턴 성공!");
+                        }
+                    }
+                    else
+                    {
+                        // 새로운 타겟
+                        currentTargetKiller = killer;
+                        flashlightStunTimer = 0f;
+                        Debug.Log($"[PCPlayerController] 손전등 타겟: {killer.gameObject.name}");
+                    }
+                    return;
+                }
+            }
+
+            // 타겟에서 벗어남 - 타이머 천천히 감소 (완전 리셋 대신)
+            if (flashlightStunTimer > 0f)
+            {
+                flashlightStunTimer -= Time.deltaTime * 0.5f; // 절반 속도로 감소
+                if (flashlightStunTimer <= 0f)
+                {
+                    flashlightStunTimer = 0f;
+                    currentTargetKiller = null;
                 }
             }
         }
@@ -767,6 +1142,29 @@ namespace HorrorGame
             Debug.Log("[PCPlayerController] 숨기 시작");
         }
 
+        /// <summary>
+        /// 상자에서 숨기 시작 (CharacterController는 BoxHidingSpot에서 관리)
+        /// </summary>
+        public void StartHidingInBox(BoxHidingSpot box)
+        {
+            IsHiding = true;
+            IsSprinting = false;
+            currentBoxHidingSpot = box;
+
+            Debug.Log("[PCPlayerController] 상자에서 숨기 시작");
+        }
+
+        /// <summary>
+        /// 상자에서 숨기 종료
+        /// </summary>
+        public void StopHidingFromBox()
+        {
+            IsHiding = false;
+            currentBoxHidingSpot = null;
+
+            Debug.Log("[PCPlayerController] 상자에서 숨기 종료");
+        }
+
         public void StopHiding()
         {
             IsHiding = false;
@@ -778,6 +1176,153 @@ namespace HorrorGame
             Debug.Log("[PCPlayerController] 잡혔습니다!");
             enabled = false;
             LockCursor(false);
+        }
+
+        #endregion
+
+        #region Item Holding
+
+        /// <summary>
+        /// 아이템 집기
+        /// </summary>
+        public void HoldItem(PickupItem item)
+        {
+            if (item == null) return;
+
+            heldItem = item;
+
+            // 아이템을 손 위치로 이동
+            Transform activeHand = GetActiveHand();
+            if (activeHand != null)
+            {
+                item.transform.SetParent(activeHand);
+                item.transform.localPosition = Vector3.forward * 0.3f;
+                item.transform.localRotation = Quaternion.identity;
+                item.transform.localScale = Vector3.one;
+            }
+
+            // Rigidbody 비활성화
+            var rb = item.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
+
+            // Collider 비활성화 (집은 상태에서 충돌 방지)
+            var col = item.GetComponent<Collider>();
+            if (col != null)
+            {
+                col.enabled = false;
+            }
+
+            Debug.Log($"[PCPlayerController] 아이템 집음: {item.name}");
+        }
+
+        /// <summary>
+        /// 아이템 내려놓기
+        /// </summary>
+        public void DropHeldItem(bool destroy = false)
+        {
+            if (heldItem == null) return;
+
+            var item = heldItem;
+            heldItem = null;
+
+            if (destroy)
+            {
+                Destroy(item.gameObject);
+                Debug.Log($"[PCPlayerController] 아이템 사용됨: {item.name}");
+            }
+            else
+            {
+                // 부모 해제
+                item.transform.SetParent(null);
+
+                // 플레이어 앞에 내려놓기
+                item.transform.position = transform.position + transform.forward * 0.5f + Vector3.up * 0.5f;
+
+                // Collider 활성화
+                var col = item.GetComponent<Collider>();
+                if (col != null)
+                {
+                    col.enabled = true;
+                }
+
+                // Rigidbody는 usePhysics 설정에 따라 결정
+                var rb = item.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    // 내려놓을 때는 잠시 물리 활성화하여 떨어지게
+                    rb.isKinematic = false;
+                    rb.useGravity = true;
+                }
+
+                Debug.Log($"[PCPlayerController] 아이템 내려놓음: {item.name}");
+            }
+        }
+
+        #endregion
+
+        #region Key Destruction
+
+        /// <summary>
+        /// 들고 있는 키를 파괴
+        /// </summary>
+        private void DestroyHeldKey(KeyItem keyItem)
+        {
+            if (keyItem == null) return;
+
+            string keyId = keyItem.keyId;
+            GameObject keyObject = keyItem.gameObject;
+
+            // heldItem을 먼저 null로 설정
+            heldItem = null;
+
+            // 부모에서 분리 (손에서 떼어냄)
+            keyObject.transform.SetParent(null);
+
+            // 즉시 파괴 (DestroyImmediate는 에디터에서만 사용, Destroy 사용)
+            Destroy(keyObject);
+
+            Debug.Log($"[PCPlayerController] 키 파괴됨: {keyId}");
+        }
+
+        #endregion
+
+        #region Collision Detection
+
+        /// <summary>
+        /// CharacterController 충돌 감지 - 키를 들고 문에 부딪히면 문 열기
+        /// </summary>
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            // 키를 들고 있지 않으면 무시
+            if (!IsHoldingItem || !(heldItem is KeyItem keyItem)) return;
+
+            // Door 컴포넌트 찾기 (자신 또는 부모에서)
+            var door = hit.collider.GetComponent<Door>();
+            if (door == null)
+            {
+                door = hit.collider.GetComponentInParent<Door>();
+            }
+
+            if (door != null && door.IsLocked)
+            {
+                Debug.Log($"[PCPlayerController] 문 충돌 감지: {hit.collider.name}, 키: {keyItem.keyId}, 필요 키: {door.requiredKeyId}");
+
+                if (door.requiredKeyId == keyItem.keyId)
+                {
+                    Debug.Log($"[PCPlayerController] 키로 문 열림 (충돌): {keyItem.keyId}");
+
+                    // 키 파괴 처리
+                    DestroyHeldKey(keyItem);
+
+                    // 문 잠금 해제 후 열기 (삭제하지 않음)
+                    door.Unlock();
+                    door.OpenDoor();
+                }
+            }
         }
 
         #endregion

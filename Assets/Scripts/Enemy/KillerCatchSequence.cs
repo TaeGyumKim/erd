@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 using System.Collections;
 
 namespace HorrorGame
@@ -53,6 +54,19 @@ namespace HorrorGame
         [Tooltip("페이드 시작 딜레이 (흔들기 후)")]
         public float fadeStartDelay = 1.0f;
 
+        [Header("Red Screen Effect - 빨간 화면")]
+        [Tooltip("빨간 화면 효과 활성화")]
+        public bool enableRedScreen = true;
+
+        [Tooltip("빨간 화면 Image (자동 생성됨)")]
+        public Image redScreenImage;
+
+        [Tooltip("빨간 화면 최대 알파값")]
+        public float redScreenMaxAlpha = 0.6f;
+
+        [Tooltip("빨간 화면 페이드인 시간")]
+        public float redScreenFadeInDuration = 0.5f;
+
         [Header("Audio")]
         [Tooltip("잡힐 때 재생할 사운드")]
         public AudioClip catchSound;
@@ -93,6 +107,46 @@ namespace HorrorGame
                 audioSource.spatialBlend = 1f;
                 audioSource.playOnAwake = false;
             }
+
+            // 빨간 화면 Image 자동 생성
+            if (enableRedScreen && redScreenImage == null)
+            {
+                CreateRedScreenImage();
+            }
+        }
+
+        /// <summary>
+        /// 빨간 화면 효과용 Image 생성
+        /// 항상 Screen Space Overlay Canvas에 생성 (World Space Canvas와 독립적)
+        /// </summary>
+        private void CreateRedScreenImage()
+        {
+            // 전용 Screen Space Overlay Canvas 생성 (World Space Canvas가 있어도 별도 생성)
+            GameObject canvasObj = new GameObject("RedScreenCanvas");
+            Canvas canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 98; // GameOverUI(100)보다 아래
+            canvasObj.AddComponent<CanvasScaler>();
+            canvasObj.AddComponent<GraphicRaycaster>();
+            Debug.Log("[KillerCatchSequence] RedScreenCanvas 생성됨 (Screen Space Overlay)");
+
+            // 빨간 화면 Image 생성
+            GameObject redScreenObj = new GameObject("RedScreen");
+            redScreenObj.transform.SetParent(canvas.transform, false);
+
+            redScreenImage = redScreenObj.AddComponent<Image>();
+            redScreenImage.color = new Color(0.8f, 0f, 0f, 0f); // 빨간색, 투명
+            redScreenImage.raycastTarget = false;
+
+            // 전체 화면 크기
+            RectTransform rect = redScreenImage.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            redScreenObj.SetActive(false);
+            Debug.Log("[KillerCatchSequence] 빨간 화면 Image 생성됨");
         }
 
         private void Start()
@@ -189,7 +243,13 @@ namespace HorrorGame
             // 4. 살인마가 플레이어를 바라보도록
             LookAtPlayer();
 
-            // 5. 흔들기 연출
+            // 5. 빨간 화면 효과 시작
+            if (enableRedScreen)
+            {
+                StartCoroutine(FadeInRedScreen());
+            }
+
+            // 6. 흔들기 연출
             if (enableShake)
             {
                 OnShakeStart?.Invoke();
@@ -202,22 +262,79 @@ namespace HorrorGame
                 yield return StartCoroutine(ShakePlayerCoroutine());
             }
 
-            // 6. 페이드 아웃 전 딜레이
+            // 7. 페이드 아웃 전 딜레이
             yield return new WaitForSeconds(fadeStartDelay);
 
-            // 7. 게임오버 사운드
+            // 8. 게임오버 사운드
             if (gameOverSound != null)
             {
                 audioSource.PlayOneShot(gameOverSound);
             }
 
-            // 8. 화면 페이드 아웃
+            // 9. 화면 페이드 아웃 (빨간 화면 → 검은 화면)
             yield return StartCoroutine(FadeOutCoroutine());
 
             isSequenceRunning = false;
             OnCatchComplete?.Invoke();
 
             Debug.Log("[KillerCatchSequence] 잡기 시퀀스 완료");
+
+            // 10. YOU DIED UI 표시
+            ShowGameOverUI();
+        }
+
+        /// <summary>
+        /// 빨간 화면 페이드인
+        /// </summary>
+        private IEnumerator FadeInRedScreen()
+        {
+            if (redScreenImage == null) yield break;
+
+            redScreenImage.gameObject.SetActive(true);
+            Color color = redScreenImage.color;
+            color.a = 0f;
+            redScreenImage.color = color;
+
+            float elapsed = 0f;
+            while (elapsed < redScreenFadeInDuration)
+            {
+                elapsed += Time.deltaTime;
+                color.a = Mathf.Lerp(0f, redScreenMaxAlpha, elapsed / redScreenFadeInDuration);
+                redScreenImage.color = color;
+                yield return null;
+            }
+
+            color.a = redScreenMaxAlpha;
+            redScreenImage.color = color;
+        }
+
+        /// <summary>
+        /// GameOverUI 표시
+        /// </summary>
+        private void ShowGameOverUI()
+        {
+            // 빨간 화면 숨기기
+            if (redScreenImage != null)
+            {
+                redScreenImage.gameObject.SetActive(false);
+            }
+
+            // GameOverUI 표시
+            var gameOverUI = FindFirstObjectByType<GameOverUI>();
+            if (gameOverUI != null)
+            {
+                gameOverUI.ShowGameOver();
+                Debug.Log("[KillerCatchSequence] GameOverUI 표시");
+            }
+            else
+            {
+                // GameOverUI가 없으면 HorrorGameManager의 GameOver 호출
+                if (HorrorGameManager.Instance != null)
+                {
+                    HorrorGameManager.Instance.GameOver("살인마에게 잡힘");
+                }
+                Debug.LogWarning("[KillerCatchSequence] GameOverUI를 찾을 수 없습니다!");
+            }
         }
 
         /// <summary>

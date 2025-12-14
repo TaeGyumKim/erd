@@ -37,8 +37,9 @@ namespace HorrorGame
 
             base.Awake();
 
-            // 열쇠는 항상 자동 수집
-            autoCollect = true;
+            // 열쇠는 손에 들고 문에 사용해야 함 (autoCollect = false)
+            autoCollect = false;
+            destroyOnCollect = false; // 손에 들고 사용하므로 자동 파괴 안함
         }
 
         /// <summary>

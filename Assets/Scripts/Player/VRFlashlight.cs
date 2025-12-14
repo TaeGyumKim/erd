@@ -48,6 +48,16 @@ namespace HorrorGame
         public AudioClip turnOffSound;
         public AudioClip flickerSound;
 
+        [Header("Killer Stun - 살인마 스턴")]
+        [Tooltip("손전등 스턴 활성화")]
+        public bool enableKillerStun = true;
+
+        [Tooltip("스턴 필요 시간 (0.15초 - VR에서 빠르게 비추기)")]
+        public float stunTime = 0.15f;
+
+        [Tooltip("스턴 감지 거리")]
+        public float stunRange = 12f;
+
         public bool IsOn { get; private set; }
         public float BatteryPercent => currentBattery / maxBattery;
 
@@ -57,6 +67,10 @@ namespace HorrorGame
         private AudioSource audioSource;
         private float flickerTimer;
         private bool isFlickering;
+
+        // 스턴 관련
+        private float stunTimer;
+        private KillerAI currentTargetKiller;
 
         private void Awake()
         {
@@ -99,6 +113,18 @@ namespace HorrorGame
             {
                 UpdateBattery();
                 UpdateFlicker();
+
+                // 살인마 스턴 체크
+                if (enableKillerStun)
+                {
+                    CheckKillerStun();
+                }
+            }
+            else
+            {
+                // 손전등 꺼지면 스턴 타이머 리셋
+                stunTimer = 0f;
+                currentTargetKiller = null;
             }
         }
 
@@ -209,5 +235,63 @@ namespace HorrorGame
             currentBattery = maxBattery;
             OnBatteryChanged?.Invoke(BatteryPercent);
         }
+
+        /// <summary>
+        /// 손전등으로 살인마 스턴 체크
+        /// VR에서는 손전등 방향(transform.forward)으로 레이캐스트
+        /// </summary>
+        private void CheckKillerStun()
+        {
+            // 손전등 방향으로 레이캐스트
+            Ray ray = new Ray(transform.position, transform.forward);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit, stunRange))
+            {
+                // 살인마인지 확인
+                KillerAI killer = hit.collider.GetComponent<KillerAI>();
+                if (killer == null)
+                {
+                    killer = hit.collider.GetComponentInParent<KillerAI>();
+                }
+
+                if (killer != null && !killer.IsStunned)
+                {
+                    // 같은 살인마에게 계속 비추고 있으면 타이머 증가
+                    if (currentTargetKiller == killer)
+                    {
+                        stunTimer += Time.deltaTime;
+
+                        // 스턴 시간 도달
+                        if (stunTimer >= stunTime)
+                        {
+                            killer.StunByFlashlight();
+                            stunTimer = 0f;
+                            currentTargetKiller = null;
+                            Debug.Log("[VRFlashlight] 손전등으로 살인마 스턴 성공!");
+                        }
+                    }
+                    else
+                    {
+                        // 새로운 타겟
+                        currentTargetKiller = killer;
+                        stunTimer = 0f;
+                    }
+                    return;
+                }
+            }
+
+            // 타겟에서 벗어남 - 타이머 천천히 감소
+            if (stunTimer > 0f)
+            {
+                stunTimer -= Time.deltaTime * 0.5f;
+                if (stunTimer <= 0f)
+                {
+                    stunTimer = 0f;
+                    currentTargetKiller = null;
+                }
+            }
+        }
     }
 }
+

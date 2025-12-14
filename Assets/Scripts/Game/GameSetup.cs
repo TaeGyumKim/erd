@@ -33,7 +33,6 @@ namespace HorrorGame
         public StoryProgressManager storyManager;
         public ObjectiveSystem objectiveSystem;
         public KillerAI killer;
-        public GhostAI ghost;
 
         private void Start()
         {
@@ -57,9 +56,6 @@ namespace HorrorGame
             // 킬러 설정
             SetupKiller();
 
-            // 유령 설정
-            SetupGhost();
-
             // 목표 설정
             SetupObjectives();
 
@@ -79,9 +75,6 @@ namespace HorrorGame
 
             if (killer == null)
                 killer = FindObjectOfType<KillerAI>();
-
-            if (ghost == null)
-                ghost = FindObjectOfType<GhostAI>();
         }
 
         private void SetupGameManager()
@@ -123,14 +116,6 @@ namespace HorrorGame
             {
                 agent.speed *= killerSpeedMultiplier;
             }
-        }
-
-        private void SetupGhost()
-        {
-            if (ghost == null) return;
-
-            // 유령도 처음엔 비활성화
-            ghost.gameObject.SetActive(false);
         }
 
         private void SetupObjectives()

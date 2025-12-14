@@ -277,21 +277,15 @@ namespace HorrorGame
         }
 
         /// <summary>
-        /// 유령 메시지 트리거
+        /// 유령 메시지 트리거 (폐기됨 - 유령 기획 제거)
         /// </summary>
         public void TriggerGhostMessage()
         {
             if (ghostMessageReceived) return;
 
             ghostMessageReceived = true;
-            ShowStoryMessage("\"도와줘... 그를 멈춰줘...\"\n\n유령의 속삭임이 들린다...");
-
-            // 유령 AI에게 알림
-            var ghosts = FindObjectsOfType<GhostAI>();
-            foreach (var ghost in ghosts)
-            {
-                ghost.StartHelping();
-            }
+            // 유령 시스템 폐기 - 메시지만 표시
+            ShowStoryMessage("\"도와줘... 그를 멈춰줘...\"\n\n누군가의 속삭임이 들린다...");
         }
 
         /// <summary>

@@ -52,11 +52,17 @@ namespace HorrorGame
         public float patrolSpeed = 2f;
 
         [Header("Chase")]
-        [Tooltip("추적 속도")]
-        public float chaseSpeed = 4.5f;
+        [Tooltip("추적 속도 (플레이어 달리기 속도보다 약간 느림)")]
+        public float chaseSpeed = 5.5f;
 
-        [Tooltip("추적 포기 시간")]
+        [Tooltip("추적 포기 시간 (시야에서 사라진 후)")]
         public float chaseTimeout = 8f;
+
+        [Tooltip("최대 추적 시간 (시야에 있어도 이 시간 후 잠시 멈춤)")]
+        public float maxChaseTime = 30f;
+
+        [Tooltip("추적 휴식 시간 (최대 추적 후 순찰 전환 시간)")]
+        public float chaseRestTime = 5f;
 
         [Tooltip("잡기 거리")]
         public float catchDistance = 1.5f;
@@ -75,18 +81,43 @@ namespace HorrorGame
         public AudioClip footstepSound;
         public AudioClip chaseMusic;
         public AudioClip catchSound;
+        public AudioClip stunSound;
+
+        [Header("Flashlight Stun - 손전등 스턴")]
+        [Tooltip("손전등 스턴 활성화")]
+        public bool canBeStunned = true;
+
+        [Tooltip("스턴 지속 시간 (5초로 증가)")]
+        public float stunDuration = 5f;
+
+        [Tooltip("스턴 후 어그로 해제")]
+        public bool loseAggroAfterStun = true;
+
+        [Tooltip("스턴 쿨다운 (연속 스턴 방지)")]
+        public float stunCooldown = 8f;
+
+        [Header("Crouch Detection - 앉기 감지")]
+        [Tooltip("앉은 플레이어 감지 거리 배율 (1.0 = 100%)")]
+        [Range(0.1f, 1f)]
+        public float crouchDetectionMultiplier = 0.4f;
+
+        [Tooltip("앉은 플레이어 소음 감지 거리 배율")]
+        [Range(0.1f, 1f)]
+        public float crouchHearingMultiplier = 0.3f;
 
         [Header("Events")]
         public UnityEngine.Events.UnityEvent OnPlayerSpotted;
         public UnityEngine.Events.UnityEvent OnPlayerLost;
         public UnityEngine.Events.UnityEvent OnPlayerCaught;
+        public UnityEngine.Events.UnityEvent OnStunned;
 
         public enum AIState
         {
             Patrol,     // 순찰
             Search,     // 수색 (소리 들음)
             Chase,      // 추적 (플레이어 발견)
-            Investigate // 조사 (마지막 위치)
+            Investigate, // 조사 (마지막 위치)
+            Stunned     // 스턴 (손전등에 맞음)
         }
 
         private NavMeshAgent agent;
@@ -95,6 +126,7 @@ namespace HorrorGame
 
         private int currentPatrolIndex;
         private float stateTimer;
+        private float totalChaseTime; // 총 추적 시간 (maxChaseTime 체크용)
         private Vector3 lastKnownPosition;
         private Vector3 lastNoisePosition;
         private float lastNoiseTime;
@@ -102,6 +134,17 @@ namespace HorrorGame
         private bool isWaitingAtPatrolPoint;
         private bool isSearchingAround;
         private float searchAroundCooldown;
+        private bool isResting; // 추적 휴식 중
+
+        // 스턴 관련
+        private bool isStunned;
+        private float stunEndTime;
+        private float lastStunTime;
+
+        /// <summary>
+        /// 스턴 상태인지 확인
+        /// </summary>
+        public bool IsStunned => isStunned;
 
         private void Awake()
         {
@@ -130,7 +173,102 @@ namespace HorrorGame
             agent.updatePosition = true; // NavMeshAgent가 직접 위치 이동 제어
             agent.updateRotation = true; // 이동 방향으로 회전
 
-            SetState(AIState.Patrol);
+            // 순찰 지점 자동 탐색
+            if (patrolPoints == null || patrolPoints.Length == 0)
+            {
+                AutoFindPatrolPoints();
+            }
+
+            // 순찰 지점 로그
+            if (patrolPoints == null || patrolPoints.Length == 0)
+            {
+                Debug.LogWarning("[KillerAI] 순찰 지점(patrolPoints)이 설정되지 않았습니다! 씬에 PatrolPoints 오브젝트를 추가하세요.");
+            }
+            else
+            {
+                Debug.Log($"[KillerAI] 순찰 지점 {patrolPoints.Length}개 설정됨");
+            }
+
+            // 초기 상태 설정 (0.1초 후 OnEnterState 호출)
+            Debug.Log($"[KillerAI] 초기 상태: {currentState}");
+            Invoke(nameof(DelayedStartPatrol), 0.1f);
+        }
+
+        private void DelayedStartPatrol()
+        {
+            // NavMesh 확인
+            if (!agent.isOnNavMesh)
+            {
+                Debug.LogWarning("[KillerAI] DelayedStartPatrol: NavMesh 위에 없음, 다시 스냅 시도");
+                SnapToNavMesh();
+            }
+
+            Debug.Log($"[KillerAI] 지연 초기화 - isOnNavMesh: {agent.isOnNavMesh}, enabled: {agent.enabled}");
+            OnEnterState(currentState);
+        }
+
+        /// <summary>
+        /// 씬에서 PatrolPoints 오브젝트를 찾아 자동으로 순찰 지점 설정
+        /// </summary>
+        private void AutoFindPatrolPoints()
+        {
+            // PatrolPoints 이름의 오브젝트 찾기
+            GameObject patrolPointsObj = GameObject.Find("PatrolPoints");
+            if (patrolPointsObj == null)
+            {
+                // Patrol Points 이름도 시도
+                patrolPointsObj = GameObject.Find("Patrol Points");
+            }
+
+            if (patrolPointsObj != null)
+            {
+                // 자식 Transform들 중 NavMesh에 도달 가능한 것만 사용
+                List<Transform> validPoints = new List<Transform>();
+                int childCount = patrolPointsObj.transform.childCount;
+
+                for (int i = 0; i < childCount; i++)
+                {
+                    Transform point = patrolPointsObj.transform.GetChild(i);
+                    NavMeshHit hit;
+
+                    // NavMesh 위의 가장 가까운 위치 찾기
+                    if (NavMesh.SamplePosition(point.position, out hit, 10f, NavMesh.AllAreas))
+                    {
+                        // 현재 위치에서 해당 지점까지 경로가 있는지 확인
+                        NavMeshPath path = new NavMeshPath();
+                        if (agent.CalculatePath(hit.position, path))
+                        {
+                            if (path.status == NavMeshPathStatus.PathComplete)
+                            {
+                                validPoints.Add(point);
+                                Debug.Log($"[KillerAI] 순찰 지점 {i} ({point.name}) 유효: {hit.position}");
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"[KillerAI] 순찰 지점 {i} ({point.name})까지 완전한 경로 없음 (부분 경로: {path.status})");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[KillerAI] 순찰 지점 {i} ({point.name})이 NavMesh 근처에 없음: {point.position}");
+                    }
+                }
+
+                if (validPoints.Count > 0)
+                {
+                    patrolPoints = validPoints.ToArray();
+                    Debug.Log($"[KillerAI] PatrolPoints에서 유효한 순찰 지점 {validPoints.Count}/{childCount}개 설정됨");
+                }
+                else
+                {
+                    Debug.LogWarning("[KillerAI] 유효한 순찰 지점이 없습니다! NavMesh를 확인하세요.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[KillerAI] 씬에서 PatrolPoints 오브젝트를 찾을 수 없습니다.");
+            }
         }
 
         /// <summary>
@@ -190,6 +328,13 @@ namespace HorrorGame
         {
             if (player == null) return;
 
+            // 스턴 상태 체크
+            if (isStunned)
+            {
+                UpdateStunned();
+                return;
+            }
+
             // 플레이어 감지 체크
             bool canSeePlayer = CanSeePlayer();
 
@@ -217,6 +362,21 @@ namespace HorrorGame
 
                 case AIState.Chase:
                     UpdateChase();
+
+                    // 총 추적 시간 증가
+                    totalChaseTime += Time.deltaTime;
+
+                    // 최대 추적 시간 초과 시 잠시 휴식 (순찰로 전환 후 다시 추적)
+                    if (totalChaseTime >= maxChaseTime && !isResting)
+                    {
+                        Debug.Log($"[KillerAI] 최대 추적 시간 {maxChaseTime}초 초과 - 휴식 시작");
+                        isResting = true;
+                        totalChaseTime = 0f;
+                        SetState(AIState.Patrol);
+                        StartCoroutine(RestAndResumeChase());
+                        break;
+                    }
+
                     if (!canSeePlayer)
                     {
                         stateTimer -= Time.deltaTime;
@@ -280,8 +440,13 @@ namespace HorrorGame
                 case AIState.Chase:
                     agent.speed = chaseSpeed;
                     stateTimer = chaseTimeout;
-                    OnPlayerSpotted?.Invoke();
-                    if (chaseMusic != null)
+                    // 휴식 중이 아닐 때만 이벤트 발생 (재추적 시에는 발생 안함)
+                    if (!isResting)
+                    {
+                        totalChaseTime = 0f; // 새 추적 시작 시 리셋
+                        OnPlayerSpotted?.Invoke();
+                    }
+                    if (chaseMusic != null && !audioSource.isPlaying)
                     {
                         audioSource.clip = chaseMusic;
                         audioSource.loop = true;
@@ -355,10 +520,36 @@ namespace HorrorGame
 
         private void GoToNextPatrolPoint()
         {
-            if (patrolPoints.Length == 0) return;
-            if (!agent.isOnNavMesh) return;
+            if (patrolPoints.Length == 0)
+            {
+                Debug.LogWarning("[KillerAI] GoToNextPatrolPoint: 순찰 지점이 없습니다");
+                return;
+            }
+            if (!agent.isOnNavMesh)
+            {
+                Debug.LogWarning("[KillerAI] GoToNextPatrolPoint: NavMesh 위에 없습니다");
+                return;
+            }
 
-            agent.SetDestination(patrolPoints[currentPatrolIndex].position);
+            Vector3 targetPosition = patrolPoints[currentPatrolIndex].position;
+
+            // NavMesh 위의 가장 가까운 위치 찾기
+            NavMeshHit hit;
+            Vector3 destination;
+            if (NavMesh.SamplePosition(targetPosition, out hit, 10f, NavMesh.AllAreas))
+            {
+                destination = hit.position;
+            }
+            else
+            {
+                Debug.LogWarning($"[KillerAI] 순찰 지점 {currentPatrolIndex}이 NavMesh 근처에 없습니다: {targetPosition}");
+                currentPatrolIndex = (currentPatrolIndex + 1) % patrolPoints.Length;
+                return;
+            }
+
+            agent.isStopped = false;
+            bool pathSet = agent.SetDestination(destination);
+            Debug.Log($"[KillerAI] 순찰 지점으로 이동: {currentPatrolIndex} -> {destination} (원본: {targetPosition}), 경로 설정: {pathSet}");
             currentPatrolIndex = (currentPatrolIndex + 1) % patrolPoints.Length;
         }
 
@@ -427,7 +618,31 @@ namespace HorrorGame
                 return;
             }
 
-            agent.SetDestination(player.position);
+            // 플레이어 위치에서 가장 가까운 NavMesh 위치 찾기
+            Vector3 targetPosition = player.position;
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(targetPosition, out hit, 20f, NavMesh.AllAreas))
+            {
+                // 경로가 유효한지 확인
+                NavMeshPath path = new NavMeshPath();
+                if (agent.CalculatePath(hit.position, path) && path.status == NavMeshPathStatus.PathComplete)
+                {
+                    agent.SetDestination(hit.position);
+                }
+                else
+                {
+                    // 완전한 경로가 없으면 부분 경로라도 사용
+                    if (path.status == NavMeshPathStatus.PathPartial && path.corners.Length > 0)
+                    {
+                        agent.SetDestination(path.corners[path.corners.Length - 1]);
+                    }
+                }
+            }
+            else
+            {
+                // NavMesh에서 찾을 수 없으면 직접 플레이어 위치로 시도
+                agent.SetDestination(player.position);
+            }
         }
 
         private void UpdateInvestigate()
@@ -499,8 +714,9 @@ namespace HorrorGame
             Vector3 directionToPlayer = playerCenter - eyePosition;
             float distanceToPlayer = directionToPlayer.magnitude;
 
-            // 거리 체크
-            if (distanceToPlayer > viewDistance)
+            // 거리 체크 (앉기 상태 고려)
+            float effectiveViewDist = GetEffectiveViewDistance();
+            if (distanceToPlayer > effectiveViewDist)
             {
                 return false;
             }
@@ -537,19 +753,69 @@ namespace HorrorGame
         }
 
         /// <summary>
+        /// 즉시 추적 상태로 전환 (외부 호출용)
+        /// </summary>
+        public void StartChasing()
+        {
+            if (player == null)
+            {
+                // 플레이어 찾기
+                var vrPlayer = FindObjectOfType<VRPlayer>();
+                if (vrPlayer != null)
+                {
+                    player = vrPlayer.transform;
+                }
+                else
+                {
+                    var pcPlayer = FindObjectOfType<PCPlayerController>();
+                    if (pcPlayer != null)
+                    {
+                        player = pcPlayer.transform;
+                    }
+                }
+            }
+
+            if (player != null)
+            {
+                lastKnownPosition = player.position;
+                SetState(AIState.Chase);
+                Debug.Log("[KillerAI] 추적 시작!");
+            }
+            else
+            {
+                Debug.LogWarning("[KillerAI] 플레이어를 찾을 수 없어 추적을 시작할 수 없습니다.");
+            }
+        }
+
+        /// <summary>
+        /// 순찰 상태로 전환 (외부 호출용)
+        /// </summary>
+        public void StartPatrolling()
+        {
+            SetState(AIState.Patrol);
+            Debug.Log("[KillerAI] 순찰 시작!");
+        }
+
+        /// <summary>
         /// 소리 감지
         /// </summary>
         public void HearNoise(Vector3 noisePosition)
         {
+            // 스턴 상태에서는 소리 무시
+            if (isStunned) return;
+
             float distance = Vector3.Distance(transform.position, noisePosition);
 
-            if (distance <= hearingRange)
+            // 앉기 상태 고려한 청각 범위
+            float effectiveHearing = GetEffectiveHearingRange();
+
+            if (distance <= effectiveHearing)
             {
                 lastNoisePosition = noisePosition;
                 lastNoiseTime = Time.time;
                 hasNoiseToInvestigate = true;
 
-                Debug.Log($"[KillerAI] 소리 감지! 거리: {distance:F1}m");
+                Debug.Log($"[KillerAI] 소리 감지! 거리: {distance:F1}m (범위: {effectiveHearing:F1}m)");
 
                 // 순찰 중이면 수색 모드로 전환
                 if (currentState == AIState.Patrol)
@@ -602,13 +868,53 @@ namespace HorrorGame
                 pcPlayer.GetCaught();
             }
 
-            // 게임 매니저에 게임오버 알림
-            if (HorrorGameManager.Instance != null)
+            // KillerCatchSequence 이벤트 발생 (흔들기 + 빨간화면 + YOU DIED)
+            // KillerCatchSequence가 있으면 시퀀스 완료 후 GameOverUI 표시
+            // KillerCatchSequence가 없으면 바로 GameOver 호출
+            OnPlayerCaught?.Invoke();
+
+            // KillerCatchSequence가 없는 경우에만 직접 GameOver 호출
+            var catchSequence = GetComponent<KillerCatchSequence>();
+            if (catchSequence == null)
             {
-                HorrorGameManager.Instance.GameOver("살인마에게 잡혔습니다!");
+                if (HorrorGameManager.Instance != null)
+                {
+                    HorrorGameManager.Instance.GameOver("살인마에게 잡혔습니다!");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 추적 휴식 후 재추적
+        /// </summary>
+        private IEnumerator RestAndResumeChase()
+        {
+            Debug.Log($"[KillerAI] {chaseRestTime}초 동안 휴식 후 재추적 시작");
+
+            // 추적 음악 중지
+            if (audioSource.isPlaying)
+            {
+                audioSource.Stop();
             }
 
-            OnPlayerCaught?.Invoke();
+            // 휴식 시간 대기
+            yield return new WaitForSeconds(chaseRestTime);
+
+            // 휴식 종료
+            isResting = false;
+
+            // 플레이어가 보이면 다시 추적
+            if (CanSeePlayer())
+            {
+                Debug.Log("[KillerAI] 휴식 종료 - 플레이어 발견, 재추적!");
+                lastKnownPosition = player.position;
+                SetState(AIState.Chase);
+            }
+            else
+            {
+                Debug.Log("[KillerAI] 휴식 종료 - 플레이어 안보임, 순찰 계속");
+                // 순찰 상태 유지
+            }
         }
 
         /// <summary>
@@ -702,6 +1008,144 @@ namespace HorrorGame
             {
                 agent.isStopped = false;
             }
+        }
+
+        /// <summary>
+        /// 손전등에 의한 스턴
+        /// </summary>
+        public void StunByFlashlight()
+        {
+            if (!canBeStunned) return;
+            if (isStunned) return;
+
+            // 쿨다운 체크
+            if (Time.time - lastStunTime < stunCooldown) return;
+
+            Debug.Log("[KillerAI] 손전등에 스턴됨!");
+
+            isStunned = true;
+            stunEndTime = Time.time + stunDuration;
+            lastStunTime = Time.time;
+
+            // 이동 정지
+            if (agent != null)
+            {
+                agent.isStopped = true;
+            }
+
+            // 스턴 사운드
+            if (stunSound != null && audioSource != null)
+            {
+                audioSource.PlayOneShot(stunSound);
+            }
+
+            // 스턴 이벤트
+            OnStunned?.Invoke();
+
+            // 애니메이터에 스턴 알림
+            var animator = GetComponent<KillerAnimator>();
+            if (animator != null)
+            {
+                animator.SetStunned(true);
+            }
+        }
+
+        /// <summary>
+        /// 스턴 상태 업데이트
+        /// </summary>
+        private void UpdateStunned()
+        {
+            if (Time.time >= stunEndTime)
+            {
+                EndStun();
+            }
+        }
+
+        /// <summary>
+        /// 스턴 종료
+        /// </summary>
+        private void EndStun()
+        {
+            Debug.Log("[KillerAI] 스턴 종료");
+
+            isStunned = false;
+
+            // 이동 재개
+            if (agent != null)
+            {
+                agent.isStopped = false;
+            }
+
+            // 애니메이터에 스턴 해제 알림
+            var animator = GetComponent<KillerAnimator>();
+            if (animator != null)
+            {
+                animator.SetStunned(false);
+            }
+
+            // 어그로 해제 (순찰 상태로 복귀)
+            if (loseAggroAfterStun)
+            {
+                SetState(AIState.Patrol);
+                OnPlayerLost?.Invoke();
+                Debug.Log("[KillerAI] 어그로 해제, 순찰로 복귀");
+            }
+            else
+            {
+                // 어그로 유지 시 마지막 위치 조사
+                if (currentState == AIState.Chase)
+                {
+                    SetState(AIState.Investigate);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 플레이어가 앉아있는지 확인
+        /// </summary>
+        private bool IsPlayerCrouching()
+        {
+            if (player == null) return false;
+
+            // PC 플레이어 체크
+            var pcPlayer = player.GetComponent<PCPlayerController>();
+            if (pcPlayer != null)
+            {
+                return pcPlayer.IsCrouching;
+            }
+
+            // VR 플레이어 체크 (머리 높이로 판단)
+            var vrPlayer = player.GetComponent<VRPlayer>();
+            if (vrPlayer != null)
+            {
+                return vrPlayer.IsCrouching;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 현재 감지 거리 반환 (앉기 상태 고려)
+        /// </summary>
+        public float GetEffectiveViewDistance()
+        {
+            if (IsPlayerCrouching())
+            {
+                return viewDistance * crouchDetectionMultiplier;
+            }
+            return viewDistance;
+        }
+
+        /// <summary>
+        /// 현재 청각 범위 반환 (앉기 상태 고려)
+        /// </summary>
+        public float GetEffectiveHearingRange()
+        {
+            if (IsPlayerCrouching())
+            {
+                return hearingRange * crouchHearingMultiplier;
+            }
+            return hearingRange;
         }
 
         // 에디터에서 시야 범위 시각화

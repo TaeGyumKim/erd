@@ -82,6 +82,18 @@ namespace HorrorGame
         private Vector3 rootMotionDelta;
         private bool isRootMotionEnabled;
 
+        // 파라미터 존재 여부 캐싱
+        private bool hasSpeedParam;
+        private bool hasIsChasingParam;
+        private bool hasIsWalkingParam;
+        private bool hasIsRunningParam;
+        private bool hasIsSearchingParam;
+        private bool hasAttackTriggerParam;
+        private bool hasAlertTriggerParam;
+        private bool hasCatchTriggerParam;
+        private bool hasNormalizedSpeedParam;
+        private bool parametersChecked = false;
+
         private void Awake()
         {
             // 컴포넌트 자동 탐색
@@ -111,6 +123,14 @@ namespace HorrorGame
             {
                 Debug.LogWarning("[KillerAnimator] Animator를 찾을 수 없습니다!");
             }
+            else
+            {
+                // Animator Controller 확인 및 자동 연결
+                CheckAndAssignAnimatorController();
+
+                // 파라미터 존재 여부 체크
+                CheckAnimatorParameters();
+            }
 
             lastPosition = transform.position;
 
@@ -124,6 +144,91 @@ namespace HorrorGame
 
             // Root Motion 설정
             SetupRootMotion();
+        }
+
+        /// <summary>
+        /// Animator Controller 확인 및 자동 연결
+        /// </summary>
+        private void CheckAndAssignAnimatorController()
+        {
+            if (animator == null) return;
+
+            string controllerName = animator.runtimeAnimatorController != null
+                ? animator.runtimeAnimatorController.name
+                : "없음";
+
+            Debug.Log($"[KillerAnimator] 현재 Animator Controller: {controllerName}");
+
+            // Animator Controller가 없거나 잘못된 Controller인 경우 교체
+            bool needsReplacement = animator.runtimeAnimatorController == null ||
+                                    animator.runtimeAnimatorController.name != "KillerAnimatorController";
+
+            if (needsReplacement)
+            {
+                Debug.LogWarning($"[KillerAnimator] 잘못된 Animator Controller ({controllerName})! KillerAnimatorController로 교체 시도...");
+
+                // Resources 폴더에서 로드 시도 (런타임)
+                var controller = Resources.Load<RuntimeAnimatorController>("KillerAnimatorController");
+                if (controller != null)
+                {
+                    animator.runtimeAnimatorController = controller;
+                    Debug.Log("[KillerAnimator] Animator Controller 자동 교체 완료 (Resources)");
+                }
+                else
+                {
+                    // 직접 경로로 로드 시도 (에디터에서만 작동)
+#if UNITY_EDITOR
+                    var assetController = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                        "Assets/Character/KillerAnimatorController.controller");
+                    if (assetController != null)
+                    {
+                        animator.runtimeAnimatorController = assetController;
+                        Debug.Log("[KillerAnimator] Animator Controller 자동 교체 완료 (AssetDatabase)");
+                    }
+                    else
+#endif
+                    {
+                        Debug.LogError("[KillerAnimator] KillerAnimatorController를 찾을 수 없습니다! " +
+                            "1. Assets/Character/KillerAnimatorController.controller를 Animator에 연결하거나, " +
+                            "2. Assets/Resources/ 폴더에 복사하세요.");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Animator에 파라미터가 존재하는지 확인
+        /// </summary>
+        private void CheckAnimatorParameters()
+        {
+            if (animator == null || parametersChecked) return;
+
+            foreach (var param in animator.parameters)
+            {
+                int hash = param.nameHash;
+                if (hash == SpeedHash) hasSpeedParam = true;
+                else if (hash == IsChasingHash) hasIsChasingParam = true;
+                else if (hash == IsWalkingHash) hasIsWalkingParam = true;
+                else if (hash == IsRunningHash) hasIsRunningParam = true;
+                else if (hash == IsSearchingHash) hasIsSearchingParam = true;
+                else if (hash == AttackTriggerHash) hasAttackTriggerParam = true;
+                else if (hash == AlertTriggerHash) hasAlertTriggerParam = true;
+                else if (hash == CatchTriggerHash) hasCatchTriggerParam = true;
+                else if (hash == NormalizedSpeedHash) hasNormalizedSpeedParam = true;
+            }
+
+            parametersChecked = true;
+
+            // 디버그 로그
+            Debug.Log($"[KillerAnimator] 파라미터 체크 완료 - Speed:{hasSpeedParam}, IsWalking:{hasIsWalkingParam}, IsRunning:{hasIsRunningParam}, IsChasing:{hasIsChasingParam}, NormalizedSpeed:{hasNormalizedSpeedParam}");
+
+            // 필수 파라미터가 없으면 경고
+            if (!hasSpeedParam && !hasNormalizedSpeedParam)
+            {
+                Debug.LogWarning("[KillerAnimator] 필수 파라미터(Speed 또는 NormalizedSpeed)가 없습니다! " +
+                    "KillerAnimatorController를 Animator에 연결하세요. " +
+                    $"현재 Controller: {(animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.name : "없음")}");
+            }
         }
 
         /// <summary>
@@ -404,6 +509,11 @@ namespace HorrorGame
         private void SetFloatSafe(int hash, float value)
         {
             if (animator == null) return;
+
+            // 파라미터 존재 여부 확인
+            if (hash == SpeedHash && !hasSpeedParam) return;
+            if (hash == NormalizedSpeedHash && !hasNormalizedSpeedParam) return;
+
             animator.SetFloat(hash, value);
         }
 
@@ -413,6 +523,13 @@ namespace HorrorGame
         private void SetBoolSafe(int hash, bool value)
         {
             if (animator == null) return;
+
+            // 파라미터 존재 여부 확인
+            if (hash == IsChasingHash && !hasIsChasingParam) return;
+            if (hash == IsWalkingHash && !hasIsWalkingParam) return;
+            if (hash == IsRunningHash && !hasIsRunningParam) return;
+            if (hash == IsSearchingHash && !hasIsSearchingParam) return;
+
             animator.SetBool(hash, value);
         }
 
@@ -422,6 +539,12 @@ namespace HorrorGame
         private void TriggerAnimationSafe(int hash)
         {
             if (animator == null) return;
+
+            // 파라미터 존재 여부 확인
+            if (hash == AttackTriggerHash && !hasAttackTriggerParam) return;
+            if (hash == AlertTriggerHash && !hasAlertTriggerParam) return;
+            if (hash == CatchTriggerHash && !hasCatchTriggerParam) return;
+
             animator.SetTrigger(hash);
         }
 
@@ -479,6 +602,26 @@ namespace HorrorGame
             }
 
             Debug.Log($"[KillerAnimator] Root Motion {(enabled ? "활성화" : "비활성화")}");
+        }
+
+        /// <summary>
+        /// 스턴 상태 설정
+        /// </summary>
+        public void SetStunned(bool stunned)
+        {
+            if (animator == null) return;
+
+            // 스턴 시 애니메이션 정지
+            if (stunned)
+            {
+                animator.speed = 0f;
+                Debug.Log("[KillerAnimator] 스턴 - 애니메이션 정지");
+            }
+            else
+            {
+                animator.speed = 1f;
+                Debug.Log("[KillerAnimator] 스턴 해제 - 애니메이션 재개");
+            }
         }
 
         /// <summary>
