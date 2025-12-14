@@ -118,9 +118,21 @@ namespace HorrorGame
         /// <summary>
         /// 비밀번호 UI 표시
         /// </summary>
-        private void ShowPasswordUI()
+        public void ShowPasswordUI()
         {
-            if (GamePopupUI.Instance != null)
+            // VR 키패드 우선 사용
+            if (VRPasswordKeypad.Instance != null)
+            {
+                VRPasswordKeypad.Instance.Open(
+                    "비밀번호를 입력하세요",
+                    passwordLength,
+                    OnPasswordSubmit,
+                    transform // 이 오브젝트 앞에 키패드 표시
+                );
+                Debug.Log($"[PasswordChest] {gameObject.name} VR 비밀번호 키패드 표시 (타겟 전달)");
+            }
+            // 폴백: GamePopupUI 사용
+            else if (GamePopupUI.Instance != null)
             {
                 GamePopupUI.Instance.ShowPasswordInput(
                     "비밀번호를 입력하세요",
@@ -130,7 +142,7 @@ namespace HorrorGame
             }
             else
             {
-                Debug.Log("[PasswordChest] GamePopupUI가 없습니다. 직접 입력해야 합니다.");
+                Debug.Log("[PasswordChest] VRPasswordKeypad와 GamePopupUI 모두 없습니다.");
             }
         }
 
